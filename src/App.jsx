@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { FiGithub, FiLinkedin, FiMail, FiPhone, FiMapPin, FiExternalLink, FiDownload } from 'react-icons/fi';
-import { personalInfo, skills, experience, education, projects, projectCategories, contactInfo } from './data/portfolioData';
+import { personalInfo, skills, experience, education, projects, projectCategories, contactInfo, stats } from './data/portfolioData';
+import HeroBackground from './components/HeroBackground';
 import './index.css';
-import DotGrid from './components/DotGrid';
+
 // Animation wrapper component
 const AnimatedSection = ({ children, className = '', delay = 0 }) => {
   const { ref, inView } = useInView({ threshold: 0.1, triggerOnce: true });
@@ -55,6 +56,7 @@ const Navbar = () => {
 // Hero Section
 const Hero = () => (
   <section className="hero" id="hero">
+    <HeroBackground />
     <div className="hero-content">
       <AnimatedSection>
         <div className="hero-badge">
@@ -110,18 +112,12 @@ const About = () => (
             <p key={i}>{para}</p>
           ))}
           <div className="about-stats">
-            <div className="stat-item">
-              <div className="stat-value">6+</div>
-              <div className="stat-label">AI Projects</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-value">🏆</div>
-              <div className="stat-label">Boeing Prize</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-value">98%</div>
-              <div className="stat-label">Cost Reduction</div>
-            </div>
+            {stats.map((stat, index) => (
+              <div className="stat-item" key={index}>
+                <div className="stat-value">{stat.value}</div>
+                <div className="stat-label">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </AnimatedSection>
       </div>
@@ -455,7 +451,6 @@ const CustomCursor = () => {
 function App() {
   return (
     <div className="app">
-      <DotGrid />
       <CustomCursor />
       <Navbar />
       <Hero />

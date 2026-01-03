@@ -96,6 +96,7 @@ export const projects = [
     title: "MotionSync",
     subtitle: "AI-Powered Movement Analysis Platform",
     description: "Cross-platform fitness app with real-time AI coaching — automated form correction, rep counting, and performance metrics. Delivers 24-28 FPS pose estimation on mobile.",
+    longDescription: "Won Innovation Category (top 21 of 234 teams nationally) at Injaz Al Maghrib National Competition. The app uses MediaPipe Pose for real-time body tracking, achieving 24-28 FPS on mobile devices. Features include automated form correction that analyzes joint angles, rep counting with state machine logic, and detailed performance metrics. Built with React Native for cross-platform deployment and FastAPI backend for data processing.",
     technologies: ["React Native", "FastAPI", "MediaPipe", "TensorFlow"],
     category: "AI/ML",
     featured: true,
