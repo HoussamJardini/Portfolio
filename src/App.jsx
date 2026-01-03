@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { FiGithub, FiLinkedin, FiMail, FiPhone, FiMapPin, FiExternalLink, FiDownload } from 'react-icons/fi';
-import { personalInfo, skills, experience, education, projects, projectCategories, contactInfo, stats } from './data/portfolioData';
-import HeroBackground from './components/HeroBackground';
+import { personalInfo, skills, experience, education, projects, projectCategories, contactInfo } from './data/portfolioData';
 import './index.css';
-
+import DotGrid from './components/DotGrid';
+import HeroBackground from './components/HeroBackground';
 // Animation wrapper component
 const AnimatedSection = ({ children, className = '', delay = 0 }) => {
   const { ref, inView } = useInView({ threshold: 0.1, triggerOnce: true });
@@ -54,6 +54,7 @@ const Navbar = () => {
 };
 
 // Hero Section
+// Hero Section
 const Hero = () => (
   <section className="hero" id="hero">
     <HeroBackground />
@@ -90,7 +91,6 @@ const Hero = () => (
     </div>
   </section>
 );
-
 // About Section
 const About = () => (
   <section className="section" id="about">
@@ -112,12 +112,18 @@ const About = () => (
             <p key={i}>{para}</p>
           ))}
           <div className="about-stats">
-            {stats.map((stat, index) => (
-              <div className="stat-item" key={index}>
-                <div className="stat-value">{stat.value}</div>
-                <div className="stat-label">{stat.label}</div>
-              </div>
-            ))}
+            <div className="stat-item">
+              <div className="stat-value">6+</div>
+              <div className="stat-label">AI Projects</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-value">🏆</div>
+              <div className="stat-label">Boeing Prize</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-value">98%</div>
+              <div className="stat-label">Cost Reduction</div>
+            </div>
           </div>
         </AnimatedSection>
       </div>
@@ -125,39 +131,134 @@ const About = () => (
   </section>
 );
 
-// Skills Section
-const Skills = () => (
-  <section className="section" id="skills">
-    <div className="container">
-      <AnimatedSection className="section-header">
-        <span className="section-tag">Expertise</span>
-        <h2 className="section-title">Skills & Technologies</h2>
-        <p className="section-description">Tools and technologies I use to bring ideas to life</p>
-      </AnimatedSection>
-      <div className="skills-grid">
-        {skills.categories.map((category, index) => (
-          <AnimatedSection key={category.name} delay={index * 0.1}>
-            <div className="skill-category">
-              <h3>{category.name}</h3>
-              <div className="skill-tags">
-                {category.skills.map(skill => (
-                  <span key={skill} className="skill-tag">{skill}</span>
-                ))}
-              </div>
-            </div>
-          </AnimatedSection>
-        ))}
-      </div>
-    </div>
-  </section>
-);
 
-// Projects Section
+// Skills Section with Hover Effect
+const Skills = () => {
+  const categoryIcons = {
+    "Languages & Frameworks": (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="24" height="24">
+        <polyline points="16 18 22 12 16 6"></polyline>
+        <polyline points="8 6 2 12 8 18"></polyline>
+      </svg>
+    ),
+    "Machine Learning & AI": (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="24" height="24">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M12 2v4m0 12v4M2 12h4m12 0h4"></path>
+      </svg>
+    ),
+    "LLMs & RAG": (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="24" height="24">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+    ),
+    "Computer Vision": (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="24" height="24">
+        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+    ),
+    "Automation & Agents": (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="24" height="24">
+        <path d="m3 16 4 4 4-4"></path>
+        <path d="M7 20V4"></path>
+        <path d="m21 8-4-4-4 4"></path>
+        <path d="M17 4v16"></path>
+      </svg>
+    ),
+    "Tools & Platforms": (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="24" height="24">
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+      </svg>
+    )
+  };
+
+  const handleMouseMove = (e) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    card.style.setProperty('--mouse-x', `${x}%`);
+    card.style.setProperty('--mouse-y', `${y}%`);
+  };
+
+  return (
+    <section className="section" id="skills">
+      <div className="container">
+        <AnimatedSection className="section-header">
+          <span className="section-tag">Expertise</span>
+          <h2 className="section-title">Skills & Technologies</h2>
+          <p className="section-description">Tools and technologies I use to bring ideas to life</p>
+        </AnimatedSection>
+        <div className="skills-grid">
+          {skills.categories.map((category, index) => (
+            <AnimatedSection key={category.name} delay={index * 0.1}>
+              <div 
+                className="skill-category"
+                onMouseMove={handleMouseMove}
+              >
+                <div className="skill-category-content">
+                  <div className="skill-category-header">
+                    <h3>{category.name}</h3>
+                    <div className="skill-category-icon">
+                      {categoryIcons[category.name]}
+                    </div>
+                  </div>
+                  <div className="skill-tags">
+                    {category.skills.map(skill => (
+                      <span key={skill} className="skill-tag">{skill}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </AnimatedSection>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// Projects Section with Modal
+// Projects Section with Animated Modal
 const Projects = () => {
   const [filter, setFilter] = useState('All');
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [modalAnimation, setModalAnimation] = useState('');
+  const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
+  
   const filteredProjects = filter === 'All' 
     ? projects 
     : projects.filter(p => p.category === filter);
+
+  const openModal = (project, e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setClickPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2
+    });
+    setSelectedProject(project);
+    setModalAnimation('opening');
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeModal = () => {
+    setModalAnimation('closing');
+    setTimeout(() => {
+      setSelectedProject(null);
+      setModalAnimation('');
+      document.body.style.overflow = '';
+    }, 400);
+  };
+
+  // Close modal on escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && selectedProject) closeModal();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [selectedProject]);
 
   return (
     <section className="section" id="projects">
@@ -180,10 +281,13 @@ const Projects = () => {
             ))}
           </div>
         </AnimatedSection>
-        <div className="projects-grid">
+        <div className={`projects-grid ${selectedProject ? 'modal-active' : ''}`}>
           {filteredProjects.map((project, index) => (
             <AnimatedSection key={project.id} delay={index * 0.1}>
-              <div className={`project-card ${project.featured ? 'featured' : ''}`}>
+              <div 
+                className={`project-card ${project.featured ? 'featured' : ''} ${selectedProject?.id === project.id ? 'selected' : ''}`}
+                onClick={(e) => openModal(project, e)}
+              >
                 <div className="project-image">
                   {project.image ? (
                     <img src={project.image} alt={project.title} onError={(e) => {
@@ -196,12 +300,12 @@ const Projects = () => {
                   <div className="project-overlay">
                     <div className="project-links">
                       {project.github && (
-                        <a href={project.github} target="_blank" rel="noopener noreferrer" className="project-link">
+                        <a href={project.github} target="_blank" rel="noopener noreferrer" className="project-link" onClick={(e) => e.stopPropagation()}>
                           <FiGithub />
                         </a>
                       )}
                       {project.live && (
-                        <a href={project.live} target="_blank" rel="noopener noreferrer" className="project-link">
+                        <a href={project.live} target="_blank" rel="noopener noreferrer" className="project-link" onClick={(e) => e.stopPropagation()}>
                           <FiExternalLink />
                         </a>
                       )}
@@ -218,12 +322,79 @@ const Projects = () => {
                       <span key={tech}>{tech}</span>
                     ))}
                   </div>
+                  <span className="project-expand-hint">Click to expand →</span>
                 </div>
               </div>
             </AnimatedSection>
           ))}
         </div>
       </div>
+
+      {/* Project Modal */}
+      {selectedProject && (
+        <div 
+          className={`project-modal-overlay ${modalAnimation}`} 
+          onClick={closeModal}
+          style={{
+            '--origin-x': `${clickPosition.x}px`,
+            '--origin-y': `${clickPosition.y}px`
+          }}
+        >
+          <div className={`project-modal ${modalAnimation}`} onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={closeModal}>
+              <span></span>
+              <span></span>
+            </button>
+            
+            <div className="modal-header">
+              {selectedProject.award && <span className="project-award">{selectedProject.award}</span>}
+              <h2 className="modal-title">{selectedProject.title}</h2>
+              <p className="modal-subtitle">{selectedProject.subtitle}</p>
+            </div>
+
+            <div className="modal-body">
+              <div className="modal-image">
+                {selectedProject.image ? (
+                  <img src={selectedProject.image} alt={selectedProject.title} onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML = '<span class="placeholder">🚀</span>';
+                  }} />
+                ) : (
+                  <span className="placeholder">🚀</span>
+                )}
+              </div>
+              
+              <div className="modal-content">
+                <h4>About this project</h4>
+                <p>{selectedProject.description}</p>
+                {selectedProject.longDescription && (
+                  <p>{selectedProject.longDescription}</p>
+                )}
+
+                <h4>Technologies Used</h4>
+                <div className="modal-tech">
+                  {selectedProject.technologies.map(tech => (
+                    <span key={tech}>{tech}</span>
+                  ))}
+                </div>
+
+                <div className="modal-links">
+                  {selectedProject.github && (
+                    <a href={selectedProject.github} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+                      <FiGithub /> View on GitHub
+                    </a>
+                  )}
+                  {selectedProject.live && (
+                    <a href={selectedProject.live} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+                      <FiExternalLink /> Live Demo
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
@@ -451,6 +622,7 @@ const CustomCursor = () => {
 function App() {
   return (
     <div className="app">
+      <DotGrid />
       <CustomCursor />
       <Navbar />
       <Hero />
