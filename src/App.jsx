@@ -4,8 +4,12 @@ import { FiGithub, FiLinkedin, FiMail, FiPhone, FiMapPin, FiExternalLink, FiDown
 import { personalInfo, skills, experience, education, projects, projectCategories, contactInfo } from './data/portfolioData';
 import './index.css';
 import DotGrid from './components/DotGrid';
-import HeroBackground from './components/HeroBackground';
-// Animation wrapper component
+import FogBackground from './components/SmokeBackground';
+
+// ==========================================
+// UTILITY COMPONENTS
+// ==========================================
+
 const AnimatedSection = ({ children, className = '', delay = 0 }) => {
   const { ref, inView } = useInView({ threshold: 0.1, triggerOnce: true });
   return (
@@ -19,7 +23,10 @@ const AnimatedSection = ({ children, className = '', delay = 0 }) => {
   );
 };
 
-// Navbar Component
+// ==========================================
+// NAVBAR
+// ==========================================
+
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -53,11 +60,41 @@ const Navbar = () => {
   );
 };
 
-// Hero Section
-// Hero Section
+// ==========================================
+// HERO SECTION
+// ==========================================
+
 const Hero = () => (
   <section className="hero" id="hero">
-    <HeroBackground />
+    <FogBackground />
+    
+    {/* Corner brackets */}
+    <div className="hero-brackets">
+      <span className="bracket bracket-tl"></span>
+      <span className="bracket bracket-tr"></span>
+      <span className="bracket bracket-bl"></span>
+      <span className="bracket bracket-br"></span>
+    </div>
+  
+    <span className="bracket-label">ポートフォリオ</span>
+    <span className="bracket-text">Portfolio</span>
+
+    {/* HUD elements */}
+    <div className="hero-hud">
+      <div className="hud-left">
+        <div className="hud-label">Location</div>
+        <div className="hud-value">Kenitra, Morocco</div>
+      </div>
+      <div className="hud-right">
+        <div className="hud-label">Status</div>
+        <div className="hud-value">
+          <span className="hud-dot"></span>
+          Connected
+        </div>
+      </div>
+    </div>
+
+    {/* Main content */}
     <div className="hero-content">
       <AnimatedSection>
         <div className="hero-badge">
@@ -85,23 +122,32 @@ const Hero = () => (
         </div>
       </AnimatedSection>
     </div>
+
     <div className="scroll-indicator">
       <div className="mouse"></div>
       <span>Scroll down</span>
     </div>
   </section>
 );
-// About Section
+
+// ==========================================
+// ABOUT SECTION
+// ==========================================
+
 const About = () => (
   <section className="section" id="about">
     <div className="container">
       <div className="about-grid">
         <AnimatedSection className="about-image fade-in-left">
           <div className="about-image-wrapper">
-            <img src={personalInfo.profileImage} alt={personalInfo.name} onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.parentElement.innerHTML = '<div style="height:400px;display:flex;align-items:center;justify-content:center;font-size:4rem;opacity:0.3;">👨‍💻</div>';
-            }} />
+            <img 
+              src={personalInfo.profileImage} 
+              alt={personalInfo.name} 
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.parentElement.innerHTML = '<div class="about-placeholder">👨‍💻</div>';
+              }} 
+            />
           </div>
           <div className="about-image-decoration"></div>
         </AnimatedSection>
@@ -131,8 +177,10 @@ const About = () => (
   </section>
 );
 
+// ==========================================
+// SKILLS SECTION
+// ==========================================
 
-// Skills Section with Hover Effect
 const Skills = () => {
   const categoryIcons = {
     "Languages & Frameworks": (
@@ -193,10 +241,7 @@ const Skills = () => {
         <div className="skills-grid">
           {skills.categories.map((category, index) => (
             <AnimatedSection key={category.name} delay={index * 0.1}>
-              <div 
-                className="skill-category"
-                onMouseMove={handleMouseMove}
-              >
+              <div className="skill-category" onMouseMove={handleMouseMove}>
                 <div className="skill-category-content">
                   <div className="skill-category-header">
                     <h3>{category.name}</h3>
@@ -219,8 +264,10 @@ const Skills = () => {
   );
 };
 
-// Projects Section with Modal
-// Projects Section with Animated Modal
+// ==========================================
+// PROJECTS SECTION
+// ==========================================
+
 const Projects = () => {
   const [filter, setFilter] = useState('All');
   const [selectedProject, setSelectedProject] = useState(null);
@@ -251,7 +298,6 @@ const Projects = () => {
     }, 400);
   };
 
-  // Close modal on escape key
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && selectedProject) closeModal();
@@ -268,6 +314,7 @@ const Projects = () => {
           <h2 className="section-title">Featured Projects</h2>
           <p className="section-description">A selection of my recent work and personal projects</p>
         </AnimatedSection>
+        
         <AnimatedSection>
           <div className="projects-filter">
             {projectCategories.map(cat => (
@@ -281,6 +328,7 @@ const Projects = () => {
             ))}
           </div>
         </AnimatedSection>
+
         <div className={`projects-grid ${selectedProject ? 'modal-active' : ''}`}>
           {filteredProjects.map((project, index) => (
             <AnimatedSection key={project.id} delay={index * 0.1}>
@@ -367,9 +415,7 @@ const Projects = () => {
               <div className="modal-content">
                 <h4>About this project</h4>
                 <p>{selectedProject.description}</p>
-                {selectedProject.longDescription && (
-                  <p>{selectedProject.longDescription}</p>
-                )}
+                {selectedProject.longDescription && <p>{selectedProject.longDescription}</p>}
 
                 <h4>Technologies Used</h4>
                 <div className="modal-tech">
@@ -399,74 +445,206 @@ const Projects = () => {
   );
 };
 
-// Experience Section
-const Experience = () => (
-  <section className="section" id="experience">
-    <div className="container">
-      <AnimatedSection className="section-header">
-        <span className="section-tag">Career</span>
-        <h2 className="section-title">Work Experience</h2>
-        <p className="section-description">My professional journey so far</p>
-      </AnimatedSection>
-      <div className="timeline">
-        {experience.map((exp, index) => (
-          <AnimatedSection key={exp.id} delay={index * 0.1}>
-            <div className="timeline-item">
-              <div className="timeline-dot"></div>
-              <div className="timeline-content">
-                <span className="timeline-date">{exp.duration}</span>
-                <h3 className="timeline-title">{exp.role}</h3>
-                <p className="timeline-company">{exp.company} • {exp.location}</p>
-                <p className="timeline-description">{exp.description}</p>
-                <ul className="timeline-list">
-                  {exp.achievements.map((achievement, i) => (
-                    <li key={i}>{achievement}</li>
-                  ))}
-                </ul>
-                <div className="timeline-tech">
-                  {exp.technologies.map(tech => (
-                    <span key={tech}>{tech}</span>
-                  ))}
+// ==========================================
+// EXPERIENCE SECTION
+// ==========================================
+
+const Experience = () => {
+  const [activeIndex, setActiveIndex] = useState(null);
+
+  return (
+    <section className="section experience-section" id="experience">
+      <div className="exp-bg-glow"></div>
+      
+      <div className="container">
+        <AnimatedSection className="section-header">
+          <span className="section-tag">Career</span>
+          <h2 className="section-title">Work Experience</h2>
+          <p className="section-description">My professional journey and achievements</p>
+        </AnimatedSection>
+
+        <div className="exp-timeline">
+          <div className="exp-timeline-track">
+            <div className="exp-timeline-progress"></div>
+          </div>
+
+          {experience.map((exp, index) => (
+            <AnimatedSection key={exp.id} delay={index * 0.15}>
+              <div 
+                className={`exp-card ${activeIndex === index ? 'active' : ''} ${exp.current ? 'current' : ''}`}
+                onMouseEnter={() => setActiveIndex(index)}
+                onMouseLeave={() => setActiveIndex(null)}
+              >
+                <div className="exp-node">
+                  <div className="exp-node-outer">
+                    <div className="exp-node-inner">
+                      <div className="exp-node-pulse"></div>
+                    </div>
+                  </div>
+                  <span className="exp-node-year">{exp.duration.split(' ')[0]}</span>
+                </div>
+
+                <div className="exp-card-content">
+                  <div className="exp-card-header">
+                    <div className="exp-company-badge">
+                      <div className="exp-company-icon">{exp.company.charAt(0)}</div>
+                      <div className="exp-company-info">
+                        <span className="exp-duration">{exp.duration}</span>
+                        <h4 className="exp-company-name">{exp.company}</h4>
+                        <span className="exp-location">
+                          <FiMapPin size={12} /> {exp.location}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="exp-status">
+                      <span className="exp-status-dot"></span>
+                      {exp.current ? 'Current' : exp.type || 'Completed'}
+                    </div>
+                  </div>
+
+                  <h3 className="exp-role">{exp.role}</h3>
+                  <p className="exp-description">{exp.description}</p>
+
+                  <div className="exp-achievements">
+                    <span className="exp-achievements-label">Key Achievements</span>
+                    <ul className="exp-achievements-list">
+                      {exp.achievements.map((achievement, i) => (
+                        <li key={i}>
+                          <span className="exp-achievement-icon">◆</span>
+                          {achievement}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="exp-tech">
+                    {exp.technologies.map((tech, i) => (
+                      <span key={tech} className="exp-tech-tag" style={{ animationDelay: `${i * 0.05}s` }}>
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="exp-card-corner"></div>
                 </div>
               </div>
-            </div>
-          </AnimatedSection>
-        ))}
+            </AnimatedSection>
+          ))}
+        </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
-// Education Section
-const Education = () => (
-  <section className="section" id="education">
-    <div className="container">
-      <AnimatedSection className="section-header">
-        <span className="section-tag">Education</span>
-        <h2 className="section-title">Academic Background</h2>
-        <p className="section-description">My educational journey and qualifications</p>
-      </AnimatedSection>
-      <div className="timeline">
-        {education.map((edu, index) => (
-          <AnimatedSection key={edu.id} delay={index * 0.1}>
-            <div className="timeline-item">
-              <div className="timeline-dot"></div>
-              <div className="timeline-content">
-                <span className="timeline-date">{edu.duration}</span>
-                <h3 className="timeline-title">{edu.degree}</h3>
-                <p className="timeline-company">{edu.field}</p>
-                <p className="timeline-description">{edu.school} • {edu.location}</p>
-                {edu.grade && <p className="timeline-description">Grade: {edu.grade}</p>}
-              </div>
-            </div>
-          </AnimatedSection>
-        ))}
+// ==========================================
+// EDUCATION SECTION
+// ==========================================
+
+const Education = () => {
+  const [activeCard, setActiveCard] = useState(null);
+  
+  const getEducationIcon = (degree) => {
+    if (degree.toLowerCase().includes('master')) return '🎓';
+    if (degree.toLowerCase().includes('bachelor')) return '📜';
+    return '📚';
+  };
+
+  return (
+    <section className="section education-section" id="education">
+      <div className="container">
+        <AnimatedSection className="section-header">
+          <span className="section-tag">Education</span>
+          <h2 className="section-title">Academic Journey</h2>
+          <p className="section-description">The story of my educational path</p>
+        </AnimatedSection>
+
+        <div className="edu-storyline">
+          <div className="edu-path">
+            <div className="edu-path-line"></div>
+            <div className="edu-path-progress"></div>
+          </div>
+
+          <div className="edu-chapters">
+            {education.map((edu, index) => (
+              <AnimatedSection key={edu.id} delay={index * 0.2}>
+                <div 
+                  className={`edu-chapter ${activeCard === index ? 'active' : ''} ${index === 0 ? 'current' : ''}`}
+                  onMouseEnter={() => setActiveCard(index)}
+                  onMouseLeave={() => setActiveCard(null)}
+                >
+                  <div className="edu-chapter-marker">
+                    <div className="edu-marker-node">
+                      <span className="edu-marker-number">0{education.length - index}</span>
+                      <div className="edu-marker-ring"></div>
+                      <div className="edu-marker-pulse"></div>
+                    </div>
+                  </div>
+
+                  <div className="edu-story-card">
+                    <div className="edu-card-glow"></div>
+                    
+                    <div className="edu-card-header">
+                      <div className="edu-icon-wrapper">
+                        <span className="edu-icon">{getEducationIcon(edu.degree)}</span>
+                        <div className="edu-icon-bg"></div>
+                      </div>
+                      <div className="edu-timeline-badge">
+                        <span className="edu-year">{edu.duration}</span>
+                        {index === 0 && <span className="edu-current-tag">In Progress</span>}
+                      </div>
+                    </div>
+
+                    <div className="edu-card-content">
+                      <h3 className="edu-degree">{edu.degree}</h3>
+                      <p className="edu-field">{edu.field}</p>
+                      
+                      <div className="edu-school-info">
+                        <div className="edu-school-icon">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <span className="edu-school-name">{edu.school}</span>
+                          <span className="edu-location">{edu.location}</span>
+                        </div>
+                      </div>
+
+                      {edu.description && <p className="edu-description">{edu.description}</p>}
+
+                      {edu.grade && (
+                        <div className="edu-grade">
+                          <span className="edu-grade-label">Grade</span>
+                          <span className="edu-grade-value">{edu.grade}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="edu-card-corner">
+                      <svg viewBox="0 0 40 40">
+                        <path d="M0 0 L40 0 L40 40" fill="none" stroke="currentColor" strokeWidth="1"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </AnimatedSection>
+            ))}
+          </div>
+
+          <div className="edu-journey-start">
+            <span>Start of Journey</span>
+            <div className="edu-start-icon">🚀</div>
+          </div>
+        </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
-// Contact Section
+// ==========================================
+// CONTACT SECTION
+// ==========================================
+
 const Contact = () => {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [status, setStatus] = useState('');
@@ -474,7 +652,6 @@ const Contact = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('sending');
-    // For now, just log - replace with actual form handling
     console.log('Form submitted:', formData);
     setTimeout(() => {
       setStatus('sent');
@@ -490,6 +667,7 @@ const Contact = () => {
           <h2 className="section-title">Get In Touch</h2>
           <p className="section-description">{contactInfo.description}</p>
         </AnimatedSection>
+
         <div className="contact-grid">
           <AnimatedSection className="contact-info fade-in-left">
             <h3>{contactInfo.title}</h3>
@@ -524,6 +702,7 @@ const Contact = () => {
               </a>
             </div>
           </AnimatedSection>
+
           <AnimatedSection className="fade-in-right">
             <form className="contact-form" onSubmit={handleSubmit}>
               <div className="form-group">
@@ -555,7 +734,7 @@ const Contact = () => {
                   required
                 ></textarea>
               </div>
-              <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+              <button type="submit" className="btn btn-primary btn-full">
                 {status === 'sending' ? 'Sending...' : status === 'sent' ? 'Message Sent!' : 'Send Message'}
               </button>
             </form>
@@ -566,13 +745,16 @@ const Contact = () => {
   );
 };
 
-// Footer
+// ==========================================
+// FOOTER
+// ==========================================
+
 const Footer = () => (
   <footer className="footer">
     <div className="container">
       <div className="footer-content">
         <p className="footer-text">
-          © {new Date().getFullYear()} {personalInfo.name}. Built with React & ❤️
+          © {new Date().getFullYear()} {personalInfo.name}. Built with React & atay bne3na3
         </p>
         <div className="footer-links">
           <a href={personalInfo.github} target="_blank" rel="noopener noreferrer">GitHub</a>
@@ -584,22 +766,23 @@ const Footer = () => (
   </footer>
 );
 
-// Custom Cursor
+// ==========================================
+// CUSTOM CURSOR
+// ==========================================
+
 const CustomCursor = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
-    const updateCursor = (e) => {
-      setPosition({ x: e.clientX, y: e.clientY });
-    };
+    const updateCursor = (e) => setPosition({ x: e.clientX, y: e.clientY });
 
     const handleMouseOver = (e) => {
-      if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.closest('a') || e.target.closest('button')) {
-        setIsHovering(true);
-      } else {
-        setIsHovering(false);
-      }
+      const isInteractive = e.target.tagName === 'A' || 
+                           e.target.tagName === 'BUTTON' || 
+                           e.target.closest('a') || 
+                           e.target.closest('button');
+      setIsHovering(isInteractive);
     };
 
     window.addEventListener('mousemove', updateCursor);
@@ -618,7 +801,10 @@ const CustomCursor = () => {
   );
 };
 
-// Main App
+// ==========================================
+// MAIN APP
+// ==========================================
+
 function App() {
   return (
     <div className="app">

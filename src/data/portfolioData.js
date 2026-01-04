@@ -228,6 +228,7 @@ export const experience = [
     location: "Amiens, France (Remote)",
     duration: "July - October 2024",
     type: "Internship",
+    current: false,
     description: "Sports Analytics Startup",
     achievements: [
       "Built AI football pitch analysis system with automated annotation pipeline using Unity 3D",
