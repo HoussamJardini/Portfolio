@@ -1,10 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#9333ea;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#d946ef;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-  <rect width="100" height="100" rx="20" fill="url(#grad)"/>
-  <text x="50" y="68" font-family="Arial Black, sans-serif" font-size="50" font-weight="900" fill="white" text-anchor="middle">HJ</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="10" fill="#16150f"/><path d="M17 16v32M17 32h18M35 16v32M47 16v24a8 8 0 0 1-8 8" fill="none" stroke="#edeae2" stroke-width="5" stroke-linecap="square"/><circle cx="47" cy="48" r="4.5" fill="#ff4f1f"/></svg>

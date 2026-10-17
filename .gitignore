@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Private job-hunt material and raw sources (kept local only)
+cv/
+_archive/
+src/data/data.json
+src/data/CV_INTERNSHIP_SUMMARY.md
