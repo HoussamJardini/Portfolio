@@ -63,7 +63,7 @@ const fragment = /* glsl */ `
     if (r > 0.5) discard;
     float a = smoothstep(0.5, 0.36, r);
     vec3 col = mix(uInk, uSignal, max(vAccent, vNear * 0.85));
-    col = mix(col, uPaper, vFade * 0.45);
+    col = mix(col, uPaper, vFade * 0.6);
     gl_FragColor = vec4(col, a);
   }
 `;
@@ -139,9 +139,9 @@ function webglBackend(el, s) {
     uMouseOn: { value: 0 },
     uAspect: { value: 1 },
     uScale: { value: 1 },
-    uInk: { value: new THREE.Color(css('--spec-ink', '#ffffff')) },
-    uPaper: { value: new THREE.Color(css('--spec-fade', '#2a4bd7')) },
-    uSignal: { value: new THREE.Color(css('--spec-hot', '#ffd23f')) },
+    uInk: { value: new THREE.Color(css('--ink', '#16150f')) },
+    uPaper: { value: new THREE.Color(css('--paper-2', '#e5e1d7')) },
+    uSignal: { value: new THREE.Color(css('--signal', '#ff4f1f')) },
   };
   const mat = new THREE.ShaderMaterial({ vertexShader: vertex, fragmentShader: fragment, uniforms, transparent: true, depthWrite: false });
   const group = new THREE.Group();
@@ -183,8 +183,8 @@ function canvasBackend(el, s) {
   const ctx = canvas.getContext('2d');
   el.appendChild(canvas);
   const dpr = Math.min(window.devicePixelRatio, 2);
-  const ink = css('--spec-ink', '#ffffff');
-  const signal = css('--spec-hot', '#ffd23f');
+  const ink = css('--ink', '#16150f');
+  const signal = css('--signal', '#ff4f1f');
   let W = 1;
   let H = 1;
   let camZ = CAM_Z;
@@ -235,7 +235,7 @@ function canvasBackend(el, s) {
         }
         const sz = (s.size[i * 2] + (s.size[i * 2 + 1] - s.size[i * 2]) * t) * (H * 0.012) / depth * 0.5 * (1 + near * 0.8);
         const acc = Math.max(s.accent[i * 2] + (s.accent[i * 2 + 1] - s.accent[i * 2]) * t, near * 0.85);
-        ctx.globalAlpha = 1 - Math.min(1, Math.max(0, (depth - 4.2) / 1.6)) * 0.45;
+        ctx.globalAlpha = 1 - Math.min(1, Math.max(0, (depth - 4.2) / 1.6)) * 0.6;
         ctx.fillStyle = acc > 0.5 ? signal : ink;
         ctx.beginPath();
         ctx.arc(px, py, Math.max(0.5, sz), 0, Math.PI * 2);

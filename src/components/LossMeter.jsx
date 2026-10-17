@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 
-// Reading progress, drawn as a training-loss curve: the further you read,
-// the lower the loss.
+// Reading progress, drawn as a training-loss curve. The further you read,
+// the better the fit.
 const W = 132;
 const H = 34;
 const N = 90;
 const loss = (x, i) => 2.35 * Math.exp(-4.4 * x) + 0.035 + Math.sin(i * 2.7) * 0.05 * Math.exp(-2.5 * x);
 
-export default function LossMeter({ progress, label }) {
+export default function LossMeter({ progress, epoch, epochs, label }) {
   const pts = useMemo(
     () =>
       Array.from({ length: N + 1 }, (_, i) => {
@@ -32,7 +32,9 @@ export default function LossMeter({ progress, label }) {
         <span>
           loss <b>{value}</b>
         </span>
-        <span>{label}</span>
+        <span>
+          epoch {epoch}/{epochs} · {label}
+        </span>
       </div>
     </div>
   );

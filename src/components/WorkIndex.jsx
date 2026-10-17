@@ -2,33 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import Figure from './Figure';
 import { coverFor } from '../data/media';
 
-const Arrow = () => (
-  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-    <path d="M5 12h13M13 6l6 6-6 6" />
-  </svg>
-);
-
-function Card({ project, onOpen, i }) {
-  const cover = coverFor(project.slug);
-  return (
-    <li data-reveal style={{ '--rd': `${(i % 3) * 90}ms` }}>
-      <button className="card" onClick={() => onOpen(project.slug)}>
-        <span className="card-media">
-          {cover ? <img src={cover} alt="" loading="lazy" /> : <Figure kind={project.figure} label="" />}
-          <span className="card-tag">{project.metric}</span>
-        </span>
-        <span className="card-body">
-          <span className="card-field">{project.field}</span>
-          <span className="card-title">{project.title}</span>
-          <span className="card-sum">{project.summary}</span>
-          <span className="card-go">
-            Read more <Arrow />
-          </span>
-        </span>
-      </button>
-    </li>
-  );
-}
+const GROUPS = {
+  All: () => true,
+  Vision: (p) => ['hand', 'pose'].includes(p.figure) || /Vision|Robotics/.test(p.field),
+  'Language & documents': (p) => /Document|Research|NLP|LLM|Agents|Automation/.test(p.field),
+  'Learning & control': (p) => /Reinforcement|Robotics/.test(p.field),
+  Products: (p) => /Product|Startup|Game/.test(p.field),
+};
 
 function Preview({ project, pos }) {
   const ref = useRef(null);
@@ -49,15 +29,14 @@ function Preview({ project, pos }) {
   const cover = project && coverFor(project.slug);
   return (
     <div className={`peek ${project ? 'show' : ''}`} ref={ref} aria-hidden="true">
-      {project && (cover ? <img src={cover} alt="" /> : <Figure kind={project.figure} label="" />)}
+      {project &&
+        (cover ? <img src={cover} alt="" /> : <Figure kind={project.figure} label="" />)}
     </div>
   );
 }
 
 export default function WorkIndex({ projects, onOpen }) {
-  const featured = projects.filter((p) => p.featured);
-  const rest = projects.filter((p) => !p.featured);
-  const [more, setMore] = useState(false);
+  const [group, setGroup] = useState('All');
   const [hover, setHover] = useState(null);
   const pos = useRef({ x: 0, y: 0 });
   const [fine] = useState(() => window.matchMedia('(hover: hover) and (pointer: fine)').matches);
@@ -72,43 +51,50 @@ export default function WorkIndex({ projects, onOpen }) {
     return () => window.removeEventListener('pointermove', on);
   }, [fine]);
 
+  const list = projects.map((p, i) => ({ ...p, n: i + 1 })).filter(GROUPS[group]);
+
   return (
     <>
-      <ul className="cards">
-        {featured.map((p, i) => (
-          <Card key={p.slug} project={p} onOpen={onOpen} i={i} />
-        ))}
-      </ul>
-
-      <div className="more">
-        <button className="btn btn-line" aria-expanded={more} onClick={() => setMore((m) => !m)}>
-          {more ? 'Show fewer projects' : `Show ${rest.length} more projects`}
-          <span className={`more-icon ${more ? 'open' : ''}`} aria-hidden="true">+</span>
-        </button>
+      <div className="filters" role="tablist" aria-label="Filter projects">
+        {Object.keys(GROUPS).map((g) => {
+          const count = projects.filter(GROUPS[g]).length;
+          return (
+            <button key={g} role="tab" aria-selected={group === g} className={group === g ? 'on' : ''} onClick={() => setGroup(g)}>
+              {g} <sup>{count}</sup>
+            </button>
+          );
+        })}
       </div>
 
-      {more && (
-        <ol className="index" onPointerLeave={() => setHover(null)}>
-          {rest.map((p) => (
-            <li key={p.slug}>
-              <button
-                className="row"
-                onClick={() => onOpen(p.slug)}
-                onPointerEnter={() => fine && setHover(p)}
-                onFocus={() => fine && setHover(p)}
-                onBlur={() => setHover(null)}
-              >
-                <span className="row-title">{p.title}</span>
-                <span className="row-sum">{p.summary}</span>
-                <span className="row-metric">{p.metric}</span>
-                <span className="row-go" aria-hidden="true">
-                  <Arrow />
-                </span>
-              </button>
-            </li>
-          ))}
-        </ol>
-      )}
+      <ol
+        className="index"
+        onPointerLeave={() => setHover(null)}
+      >
+        {list.map((p) => (
+          <li key={p.slug} data-reveal>
+            <button
+              className="row"
+              onClick={() => onOpen(p.slug)}
+              onPointerEnter={() => fine && setHover(p)}
+              onFocus={() => fine && setHover(p)}
+              onBlur={() => setHover(null)}
+            >
+              <span className="row-n">{String(p.n).padStart(2, '0')}</span>
+              <span className="row-title">
+                {p.title}
+                {p.award && <i className="row-award">Award</i>}
+              </span>
+              <span className="row-sum">{p.summary}</span>
+              <span className="row-field">{p.field}</span>
+              <span className="row-metric">{p.metric}</span>
+              <span className="row-year">{p.year || ''}</span>
+              <span className="row-go" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ol>
       {fine && <Preview project={hover} pos={pos} />}
     </>
   );

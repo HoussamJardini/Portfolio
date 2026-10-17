@@ -82,12 +82,12 @@ export default function OtslDecoder() {
       <p className="otsl-note">
         {pending?.rejected ? (
           <>
-            <b>Blocked:</b> {pending.tok}, {pending.rejected}
+            <b>Masked:</b> {pending.tok}, {pending.rejected}
           </>
         ) : step >= steps.length ? (
-          'Done. The rules guarantee a valid table every time.'
+          'Done. The grammar guarantees a valid table, every time.'
         ) : (
-          'C = new cell, L = merge left, U = merge up, NL = next row. Impossible moves are blocked.'
+          'Decoding row by row. Illegal tokens are masked before sampling.'
         )}
       </p>
     </div>
