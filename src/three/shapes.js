@@ -52,7 +52,7 @@ function build({ segs, joints, seed = 1, jitter = 0.012 }) {
           a[1] + (b[1] - a[1]) * t + (rand() - 0.5) * jitter,
           a[2] + (b[2] - a[2]) * t + (rand() - 0.5) * jitter,
         ],
-        size: 0.75 + rand() * 0.6,
+        size: 1 + rand() * 0.7,
         accent: 0,
       });
     }

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Figure from './Figure';
+import OtslDecoder from './OtslDecoder';
 import { mediaFor } from '../data/media';
 import { lockScroll } from '../hooks';
 
@@ -63,6 +64,13 @@ function Body({ project, index, total, onNav, onClose }) {
           </figure>
         )}
       </div>
+
+      {project.slug === 'table-structure-model' && (
+        <div className="case-demo">
+          <p className="case-demo-title">How the model writes a table, one token per cell</p>
+          <OtslDecoder />
+        </div>
+      )}
 
       <div className="case-body">
         {project.body.map((p) => (

@@ -1,22 +1,22 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
-import OtslDecoder from './components/OtslDecoder';
 import WorkIndex from './components/WorkIndex';
 import CaseDrawer from './components/CaseDrawer';
 import LossMeter from './components/LossMeter';
 import { useActiveSection, useReveal, useScrollProgress, useSmoothScroll, scrollToId } from './hooks';
-import { person, hero, specimens, about, flagship, projects, path, toolkit } from './data/portfolioData';
+import { person, hero, specimens, about, highlight, projects, path, toolkit } from './data/portfolioData';
 import portrait from './assets/portrait.webp';
 
 const Specimen = lazy(() => import('./three/Specimen'));
 
 const SECTIONS = [
   ['top', 'Intro'],
-  ['lab', 'Lab'],
+  ['highlight', 'Latest'],
   ['work', 'Work'],
   ['about', 'About'],
-  ['path', 'Path'],
+  ['path', 'Experience'],
   ['contact', 'Contact'],
 ];
+const NAV = ['work', 'about', 'path', 'contact'];
 const SECTION_IDS = SECTIONS.map(([id]) => id);
 const SPECIMEN_IDS = specimens.map((s) => s.id);
 const CYCLE_MS = 5200;
@@ -51,31 +51,30 @@ function Masthead({ active }) {
     let last = window.scrollY;
     const on = () => {
       const y = window.scrollY;
-      setSolid(y > 40);
+      setSolid(y > window.innerHeight * 0.75);
       setHidden(y > 500 && y > last + 4 ? true : y < last - 4 ? false : (h) => h);
       last = y;
     };
+    on();
     window.addEventListener('scroll', on, { passive: true });
     return () => window.removeEventListener('scroll', on);
   }, []);
+  const label = Object.fromEntries(SECTIONS);
   return (
-    <header className={`mast ${hidden ? 'away' : ''} ${solid ? 'solid' : ''}`}>
+    <header className={`mast ${hidden ? 'away' : ''} ${solid ? 'solid' : 'over-blue'}`}>
       <Link to="top" className="mast-name">
         Houssam Jardini
       </Link>
       <nav className="mast-nav" aria-label="Sections">
-        {SECTIONS.slice(1, 5).map(([id, label]) => (
+        {NAV.map((id) => (
           <Link key={id} to={id} className={active === id ? 'on' : ''}>
-            {label}
+            {label[id]}
           </Link>
         ))}
       </nav>
       <Link to="contact" className="mast-status">
         <i className="pulse" aria-hidden="true" />
-        <span>
-          {person.availability}
-          <span className="where"> · {person.availabilityWhere}</span>
-        </span>
+        <span>{person.availability}</span>
       </Link>
     </header>
   );
@@ -86,7 +85,6 @@ function Hero() {
   const [shape, setShape] = useState(0);
   const [paused, setPaused] = useState(false);
   const [ready, setReady] = useState(false);
-  const [coords, setCoords] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     if (!ready || paused || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
@@ -94,167 +92,144 @@ function Hero() {
     return () => clearTimeout(id);
   }, [shape, paused, ready]);
 
-  const onFrame = useCallback(({ x, y, inside }) => {
-    if (inside) setCoords({ x, y });
-  }, []);
-
   const s = specimens[shape];
+  const [l1, l2] = hero.title;
+  const plain = l2.slice(0, l2.length - hero.highlight.length);
   return (
     <section id="top" className="hero">
-      <div className="hero-copy">
-        <p className="eyebrow load" style={{ '--d': 0 }}>
-          {person.role} <span className="sep">/</span> {person.location}
-        </p>
-        <h1 className="hero-title">
-          <span className="line">
-            <span className="load" style={{ '--d': 1 }}>{hero.lineA}</span>
-          </span>
-          <span className="line">
-            <span className="load" style={{ '--d': 2 }}>
-              {hero.lineB.split(' ').slice(0, -1).join(' ')} <em>{hero.lineB.split(' ').slice(-1)}</em>
+      <div className="hero-inner">
+        <div className="hero-copy">
+          <p className="eyebrow load" style={{ '--d': 0 }}>
+            {hero.eyebrow}
+          </p>
+          <h1 className="hero-title">
+            <span className="line">
+              <span className="load" style={{ '--d': 1 }}>{l1}</span>
             </span>
-          </span>
-        </h1>
-        <p className="hero-intro load" style={{ '--d': 3 }}>
-          {hero.intro}
-        </p>
-        <div className="hero-cta load" style={{ '--d': 4 }}>
-          <Link to="lab" className="btn btn-solid">
-            See the work <Arrow />
-          </Link>
-          <a className="btn btn-line" href={person.cv.en} download>
-            CV (EN)
-          </a>
-          <a className="btn btn-line" href={person.cv.fr} download>
-            CV (FR)
-          </a>
-        </div>
-      </div>
-
-      <figure
-        className="plate load"
-        style={{ '--d': 2 }}
-        onPointerEnter={() => setPaused(true)}
-        onPointerLeave={() => setPaused(false)}
-      >
-        <span className="crop tl" /><span className="crop tr" /><span className="crop bl" /><span className="crop br" />
-        <Suspense fallback={null}>
-          <Specimen shapes={SPECIMEN_IDS} active={shape} onFrame={onFrame} onReady={() => setReady(true)} />
-        </Suspense>
-        <div className="plate-read" aria-hidden="true">
-          <span>x {coords.x.toFixed(3)}</span>
-          <span>y {coords.y.toFixed(3)}</span>
-          <span>n 2600</span>
-        </div>
-        <figcaption className="plate-cap">
-          <span className="plate-fig">Fig. {String(shape + 1).padStart(2, '0')}</span>
-          <span className="plate-label" key={s.id}>
-            {s.label} <small>{s.source}</small>
-          </span>
-        </figcaption>
-        <div className="plate-tabs" role="tablist" aria-label="Specimens from my projects">
-          {specimens.map((sp, i) => (
-            <button
-              key={sp.id}
-              role="tab"
-              aria-selected={i === shape}
-              aria-label={`${sp.label}, ${sp.source}`}
-              className={i === shape ? 'on' : ''}
-              onClick={() => setShape(i)}
-            >
-              <span>{String(i + 1).padStart(2, '0')}</span>
-              <i style={{ animationDuration: `${CYCLE_MS}ms`, animationPlayState: paused || !ready ? 'paused' : 'running' }} />
-            </button>
-          ))}
-        </div>
-      </figure>
-
-      <dl className="proof">
-        {hero.proof.map((p, i) => (
-          <div key={p.value} className="load" style={{ '--d': 5 + i * 0.5 }}>
-            <dt>
-              {p.value} <small>{p.unit}</small>
-            </dt>
-            <dd>{p.note}</dd>
+            <span className="line">
+              <span className="load" style={{ '--d': 2 }}>
+                {plain}
+                <em>{hero.highlight}</em>
+              </span>
+            </span>
+          </h1>
+          <p className="hero-intro load" style={{ '--d': 3 }}>
+            {hero.intro}
+          </p>
+          <div className="hero-cta load" style={{ '--d': 4 }}>
+            <Link to="highlight" className="btn btn-sun">
+              See my work <Arrow />
+            </Link>
+            <a className="btn btn-white" href={person.cv.en} download>
+              Download CV
+            </a>
+            <a className="hero-fr" href={person.cv.fr} download>
+              Version française
+            </a>
           </div>
-        ))}
-      </dl>
+          <ul className="trust load" style={{ '--d': 5 }}>
+            {hero.trust.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+        </div>
+
+        <figure
+          className="plate load"
+          style={{ '--d': 2 }}
+          onPointerEnter={() => setPaused(true)}
+          onPointerLeave={() => setPaused(false)}
+        >
+          <span className="crop tl" /><span className="crop tr" /><span className="crop bl" /><span className="crop br" />
+          <Suspense fallback={null}>
+            <Specimen shapes={SPECIMEN_IDS} active={shape} onReady={() => setReady(true)} />
+          </Suspense>
+          <figcaption className="plate-cap" key={s.id}>
+            <span className="plate-label">{s.label}</span>
+            <span className="plate-src">from {s.source}</span>
+          </figcaption>
+          <div className="plate-tabs" role="tablist" aria-label="Shapes from my projects">
+            {specimens.map((sp, i) => (
+              <button
+                key={sp.id}
+                role="tab"
+                aria-selected={i === shape}
+                aria-label={`${sp.label}, from ${sp.source}`}
+                className={i === shape ? 'on' : ''}
+                onClick={() => setShape(i)}
+              >
+                <i style={{ animationDuration: `${CYCLE_MS}ms`, animationPlayState: paused || !ready ? 'paused' : 'running' }} />
+              </button>
+            ))}
+          </div>
+        </figure>
+      </div>
     </section>
   );
 }
 
 // ---------------------------------------------------------------- section head
-function Head({ n, kicker, title, children }) {
+function Head({ kicker, title, children }) {
   return (
     <header className="head" data-reveal>
-      <p className="head-n">
-        <span>§{n}</span> {kicker}
-      </p>
+      <p className="kicker">{kicker}</p>
       <h2 className="head-title">{title}</h2>
       {children && <p className="head-lede">{children}</p>}
     </header>
   );
 }
 
-// ---------------------------------------------------------------- lab
-function Lab({ onOpen }) {
-  const { docstruct: d, tsr: t } = flagship;
-  const maxP = Math.max(...t.compare.map((c) => c.params));
+// ---------------------------------------------------------------- highlight
+function Bars({ rows, field, label, max }) {
   return (
-    <section id="lab" className="lab">
-      <div className="wrap">
-        <Head n="01" kicker={`${flagship.org} · ${flagship.period}`} title={flagship.title}>
-          {flagship.lede}
-        </Head>
+    <div className="bars">
+      <p className="bars-label">{label}</p>
+      {rows.map((r, i) => (
+        <div key={r.name} className={`bar ${i === 0 ? 'mine' : ''}`}>
+          <span className="bar-name">{r.name}</span>
+          <span className="bar-track">
+            <i style={{ '--w': r[field] / max }} />
+          </span>
+          <span className="bar-val">{r[field]}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
-        <div className="lab-grid">
-          <article className="lab-card" data-reveal>
-            <p className="lab-tag">System</p>
-            <h3>{d.name}</h3>
-            <p className="lab-blurb">{d.blurb}</p>
-            <dl className="lab-stats">
-              {d.stats.map((s) => (
-                <div key={s.k}>
-                  <dt>{s.k}</dt>
-                  <dd>{s.v}</dd>
-                </div>
-              ))}
-            </dl>
-            <button className="btn btn-ghost" onClick={() => onOpen('docstruct')}>
-              Read the case <Arrow />
-            </button>
-          </article>
+function Highlight({ onOpen }) {
+  const c = highlight.compare;
+  return (
+    <section id="highlight" className="highlight wrap">
+      <Head kicker={`Latest project · ${highlight.where}`} title={highlight.title} />
 
-          <article className="lab-card" data-reveal style={{ '--rd': '120ms' }}>
-            <p className="lab-tag">Model</p>
-            <h3>{t.name}</h3>
-            <p className="lab-blurb">{t.blurb}</p>
-            <OtslDecoder />
-            <div className="versus">
-              {t.compare.map((c, i) => (
-                <div key={c.name} className={`vs-row ${i === 0 ? 'mine' : ''}`}>
-                  <span className="vs-name">{c.name}</span>
-                  <span className="vs-bar">
-                    <i style={{ '--w': c.params / maxP }} />
-                  </span>
-                  <span className="vs-num">{c.params}M</span>
-                  <span className="vs-score">{c.steds.toFixed(3)}</span>
-                </div>
-              ))}
-              <p className="vs-legend">
-                <span>parameters</span>
-                <span>S-TEDS on real scanned tables</span>
-              </p>
-            </div>
-            <ul className="lab-notes">
-              {t.notes.map((n) => (
-                <li key={n}>{n}</li>
-              ))}
-            </ul>
-            <button className="btn btn-ghost" onClick={() => onOpen('table-structure-model')}>
-              Read the case <Arrow />
-            </button>
-          </article>
+      <ol className="steps">
+        {highlight.steps.map((st, i) => (
+          <li key={st.label} data-reveal style={{ '--rd': `${i * 110}ms` }}>
+            <span className="step-n">{i + 1}</span>
+            <p className="step-label">{st.label}</p>
+            <p className="step-text">{st.text}</p>
+            <p className="step-big">
+              {st.big} <small>{st.unit}</small>
+            </p>
+          </li>
+        ))}
+      </ol>
+
+      <div className="compare" data-reveal>
+        <p className="compare-title">{c.title}</p>
+        <div className="compare-grid">
+          <Bars rows={c.rows} field="size" label={c.sizeLabel} max={53} />
+          <Bars rows={c.rows} field="score" label={c.scoreLabel} max={100} />
+        </div>
+        <p className="compare-note">{highlight.outcome}</p>
+        <div className="compare-cta">
+          <button className="btn btn-blue" onClick={() => onOpen('docstruct')}>
+            How DocStruct works <Arrow />
+          </button>
+          <button className="btn btn-line" onClick={() => onOpen('table-structure-model')}>
+            How the model works <Arrow />
+          </button>
         </div>
       </div>
     </section>
@@ -264,16 +239,18 @@ function Lab({ onOpen }) {
 // ---------------------------------------------------------------- about
 function About() {
   return (
-    <section id="about" className="about wrap">
-      <Head n="03" kicker="About" title="Constraints are where it gets interesting." />
-      <div className="about-grid">
+    <section id="about" className="about">
+      <div className="wrap about-grid">
         <figure className="portrait" data-reveal>
           <img src={portrait} alt="Houssam Jardini" width="900" height="1115" loading="lazy" />
-          <figcaption>Houssam Jardini</figcaption>
         </figure>
         <div className="about-text">
+          <p className="kicker" data-reveal>About me</p>
+          <h2 className="head-title" data-reveal>
+            Hi, I'm Houssam.
+          </h2>
           {about.paragraphs.map((p, i) => (
-            <p key={i} data-reveal style={{ '--rd': `${i * 80}ms` }}>
+            <p key={i} className="about-p" data-reveal style={{ '--rd': `${i * 80}ms` }}>
               {p}
             </p>
           ))}
@@ -291,11 +268,11 @@ function About() {
   );
 }
 
-// ---------------------------------------------------------------- path + toolkit
+// ---------------------------------------------------------------- experience + tools
 function Path() {
   return (
     <section id="path" className="path wrap">
-      <Head n="04" kicker="Path" title="Where I've been, newest first." />
+      <Head kicker="Experience" title="Where I've worked and studied." />
       <ol className="log">
         {path.map((p) => (
           <li key={p.when + p.what} className={p.edu ? 'edu' : ''} data-reveal>
@@ -313,14 +290,16 @@ function Path() {
       </ol>
 
       <div className="kit" data-reveal>
-        <p className="head-n">
-          <span>§05</span> Toolkit
-        </p>
+        <p className="kicker">Tools I use most</p>
         <div className="kit-grid">
           {toolkit.map((t) => (
             <div key={t.area}>
               <h3>{t.area}</h3>
-              <p>{t.items.join(' / ')}</p>
+              <ul>
+                {t.items.map((it) => (
+                  <li key={it}>{it}</li>
+                ))}
+              </ul>
             </div>
           ))}
         </div>
@@ -356,34 +335,32 @@ function Contact() {
   return (
     <section id="contact" className="contact">
       <div className="wrap">
-        <p className="head-n" data-reveal>
-          <span>§06</span> Contact
-        </p>
+        <p className="kicker" data-reveal>Contact</p>
         <h2 className="contact-title" data-reveal>
-          Have a model that is too heavy, too slow or too wrong? <em>Let's fix it.</em>
+          Have a role or a project in mind? <em>Let's talk.</em>
         </h2>
         <p className="contact-sub" data-reveal>
-          I'm looking for an AI / ML engineering role in Morocco and can start immediately. It's {time} in Kénitra right now.
+          I'm looking for an AI engineering job in Morocco and can start right away. It's {time} in Kénitra.
         </p>
         <div className="mail" data-reveal>
           <a href={`mailto:${person.email}`} className="mail-link">
             {person.email}
           </a>
-          <button className="btn btn-signal" onClick={copy} aria-live="polite">
-            {copied ? 'Copied. Talk soon.' : 'Copy address'}
+          <button className="btn btn-sun" onClick={copy} aria-live="polite">
+            {copied ? 'Copied. Talk soon.' : 'Copy email'}
           </button>
         </div>
         <ul className="elsewhere" data-reveal>
           <li><a href={person.linkedin} target="_blank" rel="noreferrer">LinkedIn ↗</a></li>
           <li><a href={person.github} target="_blank" rel="noreferrer">GitHub ↗</a></li>
           <li><a href={`tel:${person.phone.replace(/\s/g, '')}`}>{person.phone}</a></li>
-          <li><a href={person.cv.en} download>CV, English ↓</a></li>
-          <li><a href={person.cv.fr} download>CV, français ↓</a></li>
+          <li><a href={person.cv.en} download>CV in English ↓</a></li>
+          <li><a href={person.cv.fr} download>CV en français ↓</a></li>
         </ul>
       </div>
       <footer className="foot wrap">
         <span>© {new Date().getFullYear()} Houssam Jardini</span>
-        <span>Designed and built in Kénitra. Set in Archivo and JetBrains Mono.</span>
+        <span>Designed and built by me, in Kénitra.</span>
         <Link to="top">Back to top ↑</Link>
       </footer>
     </section>
@@ -415,7 +392,7 @@ export default function App() {
     return () => window.removeEventListener('hashchange', on);
   }, []);
 
-  const epoch = Math.max(1, SECTION_IDS.indexOf(active) + 1);
+  const idx = Math.max(0, SECTION_IDS.indexOf(active));
 
   return (
     <>
@@ -423,10 +400,10 @@ export default function App() {
       <Masthead active={active} />
       <main>
         <Hero />
-        <Lab onOpen={openCase} />
+        <Highlight onOpen={openCase} />
         <section id="work" className="work wrap">
-          <Head n="02" kicker="Work" title={`${projects.length} projects. Numbers included.`}>
-            Each one with the number that told me it worked. Open any row for the full story.
+          <Head kicker="Selected work" title="Things I've built.">
+            Click any project to see how it works.
           </Head>
           <WorkIndex projects={projects} onOpen={openCase} />
         </section>
@@ -434,9 +411,8 @@ export default function App() {
         <Path />
         <Contact />
       </main>
-      <LossMeter progress={progress} epoch={epoch} epochs={SECTIONS.length} label={SECTIONS[epoch - 1][1]} />
+      <LossMeter progress={progress} label={SECTIONS[idx][1]} />
       <CaseDrawer projects={projects} slug={open} onChange={openCase} />
-      <div className="grain" aria-hidden="true" />
     </>
   );
 }
