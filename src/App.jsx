@@ -268,7 +268,7 @@ function About() {
       <Head n="03" kicker="About" title="Constraints are where it gets interesting." />
       <div className="about-grid">
         <figure className="portrait" data-reveal>
-          <img src={portrait} alt="Houssam Jardini" width="900" height="1115" loading="lazy" />
+          <img src={portrait} alt="Houssam Jardini" width="830" height="1037" loading="lazy" />
           <figcaption>Houssam Jardini</figcaption>
         </figure>
         <div className="about-text">
