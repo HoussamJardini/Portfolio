@@ -68,6 +68,8 @@ export default function WorkIndex({ projects, onOpen }) {
 
       <ol
         className="index"
+        data-beam="L"
+        data-beam-name={`Full index · ${projects.length} projects`}
         onPointerLeave={() => setHover(null)}
       >
         {list.map((p) => (

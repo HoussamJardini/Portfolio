@@ -10,9 +10,9 @@
 export const person = {
   name: "Houssam Jardini",
   role: "AI / Machine Learning Engineer",
-  location: "Kénitra, Morocco",
+  location: "Oulmès, Morocco",
   availability: "Available now",
-  availabilityWhere: "Rabat / Kénitra",
+  availabilityWhere: "open to relocate in Morocco",
   email: "jardini.houssam@uit.ac.ma",
   phone: "+212 689 631 536",
   github: "https://github.com/HoussamJardini",
@@ -50,7 +50,7 @@ export const about = {
     "I like measuring things. Most projects below come with the number that convinced me they worked, and the benchmark it was measured on.",
   ],
   facts: [
-    ["Based in", "Kénitra, mobile on Rabat"],
+    ["Based in", "Oulmès · open to relocation anywhere in Morocco"],
     ["Degree", "Master of Excellence, AI & Connected Objects (Bac+5)"],
     ["Languages", "Arabic · English C1 · French B2"],
     ["Also", "Part-time programming instructor, Group Academy"],
