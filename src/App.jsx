@@ -5,6 +5,7 @@ import CaseDrawer from './components/CaseDrawer';
 import Figure from './components/Figure';
 import Intro from './components/Intro';
 import Count from './components/Count';
+import LiquidGlass from './components/LiquidGlass';
 import { useActiveSection, useReveal, useSmoothScroll, scrollToId } from './hooks';
 import { person, hero, about, flagship, projects, path, toolkit } from './data/portfolioData';
 import { coverFor } from './data/media';
@@ -21,7 +22,7 @@ const SECTIONS = [
   ['contact', 'Contact'],
 ];
 const SECTION_IDS = SECTIONS.map(([id]) => id);
-const SELECTED = ['motionsync', 'rag-document-assistant', 'schemaforge'];
+const SELECTED = ['ajustocv', 'rag-document-assistant', 'schemaforge'];
 
 // ---------------------------------------------------------------- icons
 const I = {
@@ -62,21 +63,32 @@ function Link({ to, children, className, ...rest }) {
 
 // ---------------------------------------------------------------- masthead
 function Masthead({ active }) {
-  const [hidden, setHidden] = useState(false);
   const [solid, setSolid] = useState(false);
   useEffect(() => {
-    let last = window.scrollY;
-    const on = () => {
+    const root = document.documentElement;
+    let raf = 0;
+    const paint = () => {
+      raf = 0;
       const y = window.scrollY;
+      const hp = Math.min(1, Math.max(0, y / (window.innerHeight * 0.85)));
+      root.style.setProperty('--hp', hp.toFixed(4));
       setSolid(y > 40);
-      setHidden(y > 500 && y > last + 4 ? true : y < last - 4 ? false : (h) => h);
-      last = y;
     };
+    const on = () => {
+      if (!raf) raf = requestAnimationFrame(paint);
+    };
+    on();
     window.addEventListener('scroll', on, { passive: true });
-    return () => window.removeEventListener('scroll', on);
+    window.addEventListener('resize', on);
+    return () => {
+      window.removeEventListener('scroll', on);
+      window.removeEventListener('resize', on);
+      cancelAnimationFrame(raf);
+    };
   }, []);
   return (
-    <header className={`mast ${hidden ? 'away' : ''} ${solid ? 'solid' : ''}`}>
+    <header className={`mast ${solid ? 'solid' : ''}`}>
+      <LiquidGlass className="mast-glass" />
       <Link to="top" className="mast-name">
         <b>AI / ML Engineer</b>
         <span>Houssam Jardini</span>
@@ -126,7 +138,7 @@ function Hero() {
     <section id="top" className="hero" ref={ref} data-swarm="core" data-side="C">
       <p className="hero-word" aria-hidden="true">
         {'PORTFOLIO'.split('').map((ch, i) => (
-          <span key={i} style={{ '--i': i }}>
+          <span key={i} style={{ '--i': i, '--o': Math.abs(i - 4) }}>
             {ch}
           </span>
         ))}
