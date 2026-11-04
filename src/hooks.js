@@ -25,6 +25,13 @@ export const lockScroll = (on) => {
 };
 
 export function scrollToId(id) {
+  // inside the 3D flight a section is a point on the scroll, not an element
+  const y = window.__jscroll?.(id);
+  if (typeof y === 'number') {
+    if (lenis) lenis.scrollTo(y, { duration: 2.2 });
+    else window.scrollTo({ top: y, behavior: 'smooth' });
+    return;
+  }
   const el = document.getElementById(id);
   if (!el) return;
   if (lenis) lenis.scrollTo(el, { offset: -8, duration: 1.3 });

@@ -39,8 +39,9 @@ function measure() {
   // camera distance for this viewport, and how far the beam may travel in depth
   const vh = window.innerHeight;
   const D = vh / 2 / Math.tan(THREE.MathUtils.degToRad(FOV / 2));
-  const NEAR = Math.min(D * 0.22, mobile ? 220 : 520);
-  const FAR = -D * (mobile ? 0.35 : 0.6);
+  const NEAR = Math.min(D * 0.3, mobile ? 300 : 760);
+  const FAR = -D * (mobile ? 0.55 : 0.85);
+  const RUSH = D * 0.74; // how close to the lens the beam flies for the light burst
 
   // out from behind his collar, towards the camera round his right side,
   // far away again behind his body, then off to the left lane
@@ -79,6 +80,7 @@ function measure() {
   let side = 'L';
   let lastY = startY;
   let prevBottom = startY - 40;
+  const flashes = [];
   els.forEach((el) => {
     // on a phone there is no room to cross the page: everything is hit from
     // the left margin, and depth comes from dives instead of sweeps
@@ -88,7 +90,17 @@ function measure() {
     let hit;
     if (s === 'end') hit = { x: (r.l + r.r) / 2, y: (r.t + r.b) / 2 };
     else hit = { x: s === 'L' ? r.l - 1 : r.r + 1, y: r.t + Math.min(r.h * 0.4, 140) };
-    if (target !== side) {
+    if (el.dataset.beamFlash !== undefined) {
+      // the light burst: straight at the lens, then back out to the panel
+      const y0 = Math.max(lastY + 60, prevBottom + 40);
+      const y1 = Math.max(y0 + 360, r.t - 60);
+      keys.push({ x: lane(side), y: y0, z: 0 });
+      flashes.push(keys.length);
+      keys.push({ x: W / 2, y: y0 + (y1 - y0) * 0.45, z: RUSH, rush: true });
+      keys.push({ x: lane(target), y: y1, z: NEAR * 0.2 });
+      lastY = y1;
+      side = target;
+    } else if (target !== side) {
       // swing across the gap between two sections, arcing in towards the camera
       const y0 = Math.max(lastY + 60, prevBottom + 40);
       const y1 = Math.max(y0 + 220, Math.min(r.t - 40, y0 + 460));
@@ -105,13 +117,15 @@ function measure() {
     }
     const inY = Math.max(lastY + 30, hit.y - (s === 'end' ? 230 : 160));
     hit.y = Math.max(hit.y, inY + (s === 'end' ? 110 : 70));
-    keys.push({ x: lane(side), y: inY, z: 0 });
+    // come forward a little before each hit...
+    keys.push({ x: lane(side), y: inY, z: s === 'end' ? 0 : NEAR * 0.35 });
     if (s === 'end') keys.push({ x: hit.x, y: hit.y - 50, z: 0 });
     hits.push({ ...hit, side: s, key: keys.length, el, name: el.dataset.beamName || '' });
     keys.push({ ...hit, z: 0 });
     if (s !== 'end') {
-      keys.push({ x: lane(side), y: hit.y + 160, z: 0 });
-      lastY = hit.y + 160;
+      // ...and fall away into the distance after it
+      keys.push({ x: lane(side), y: hit.y + 180, z: FAR * 0.45 });
+      lastY = hit.y + 180;
     }
     prevBottom = r.b;
   });
@@ -123,12 +137,13 @@ function measure() {
   keys.forEach((k) => {
     if (!k.z) return;
     const f = (D - k.z) / D;
-    const cy = k.hero ? vh / 2 : k.y - vh * 0.22;
+    // the rush is aimed at the middle of the screen
+    const cy = k.hero ? vh / 2 : k.rush ? k.y : k.y - vh * 0.22;
     k.x = W / 2 + (k.x - W / 2) * f;
     k.y = cy + (k.y - cy) * f;
   });
 
-  return { W, H, docH, keys, hits, labels: contentL >= 200, mobile };
+  return { W, H, docH, keys, hits, flashes, labels: contentL >= 200, mobile };
 }
 
 // ---------------------------------------------------------------- shaders
@@ -168,14 +183,7 @@ const CORE = /* glsl */ `
   void main() {
     float face = abs(dot(vN, vV));
     float ahead = (vU - uHead) * uL;
-    if (ahead > 0.0) {
-      // the route still to come: a faint dotted guide that flows forward
-      float d = fract(vU * uL / 15.0 - uTime * 0.9);
-      if (d > 0.2) discard;
-      float fade = 1.0 - smoothstep(0.0, 2600.0, ahead);
-      gl_FragColor = vec4(uColor * 0.55, 0.3 * fade * face * vDepth);
-      return;
-    }
+    if (ahead > 0.0) discard;
     float comet = exp((vU - uHead) * uL / 150.0);
     vec3 col = mix(uColor, uHot, pow(face, 4.0) * 0.9 * min(vDepth, 1.0) + comet * 0.55);
     gl_FragColor = vec4(col * (0.75 + comet * 1.6) * vDepth, (0.6 + 0.4 * face) * min(vDepth * 1.1, 1.0));
@@ -392,6 +400,7 @@ function createScene(canvas) {
     geo.hits.forEach((h) => {
       h.len = lens[Math.round((h.key / (pts.length - 1)) * DIV)];
     });
+    const flashLens = geo.flashes.map((k) => lens[Math.round((k / (pts.length - 1)) * DIV)]);
 
     // page y along the route (monotonic), for scroll -> length
     const N = Math.ceil(L / 6);
@@ -402,7 +411,7 @@ function createScene(canvas) {
       m = Math.max(m, -tmp.y);
       ym[i] = m;
     }
-    route = { curve, L, ym, N, hits: geo.hits };
+    route = { curve, L, ym, N, hits: geo.hits, flashLens };
     shared.uL.value = L;
 
     const segs = Math.ceil(L / (geo.mobile ? 7 : 5));
@@ -448,7 +457,7 @@ function createScene(canvas) {
     scene.add(node);
     meshes.push(node);
     // a burst of sparks at the point of impact
-    for (let i = 0; i < 40; i++) emit(h.x, -h.y, 0, 90 + Math.random() * 160);
+    for (let i = 0; i < 18; i++) emit(h.x, -h.y, 0, 70 + Math.random() * 120);
   }
 
   function emit(x, y, z, speed) {
@@ -485,7 +494,7 @@ function createScene(canvas) {
     const moved = lastHead ? head.position.distanceTo(lastHead) : 0;
     lastHead = (lastHead || new THREE.Vector3()).copy(head.position);
     const n = Math.min(6, 1 + Math.floor(moved / 6));
-    if (head.visible) for (let k = 0; k < n; k++) if (Math.random() < 0.7) emit(head.position.x, head.position.y, head.position.z, 20 + Math.random() * 70);
+    if (head.visible) for (let k = 0; k < n; k++) if (Math.random() < 0.3) emit(head.position.x, head.position.y, head.position.z, 20 + Math.random() * 70);
     for (let i = 0; i < SPARKS; i++) {
       if (sLife[i] <= 0) continue;
       sLife[i] -= dt / sMax[i];
@@ -512,6 +521,12 @@ function createScene(canvas) {
       }
     }
     renderer.render(scene, camera);
+
+    // how strong the light burst is: peaks as the head reaches the lens
+    let flash = 0;
+    for (const fl of route.flashLens) flash = Math.max(flash, Math.exp(-(((cur - fl) / 260) ** 2)));
+    const sp = head.position.clone().project(camera);
+    return { flash, sx: (sp.x * 0.5 + 0.5) * W, sy: (-sp.y * 0.5 + 0.5) * H };
   }
 
   function dispose() {
@@ -527,8 +542,10 @@ function createScene(canvas) {
 // ---------------------------------------------------------------- component
 export default function Beam() {
   const canvas = useRef(null);
-  const hud = useRef(null);
+  const lightEl = useRef(null);
+  const darkEl = useRef(null);
   const layer = useRef(null);
+  const flashEl = useRef(null);
   const [geo, setGeo] = useState(null);
 
   useEffect(() => {
@@ -596,21 +613,27 @@ export default function Beam() {
 
     let raf = 0;
     let last = performance.now();
-    let station = -2;
+    const fig = document.querySelector('.hero-figure');
+    let lastHeat = -1;
     const loop = (now) => {
       raf = requestAnimationFrame(loop);
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       if (!st.route || document.hidden) return;
       const sy = window.scrollY;
-      st.target = st.started ? Math.min(st.route.L, lengthAtY(sy + vh * 0.72)) : 0;
+      // the dot normally rides 72% down the screen; around a light burst it
+      // slides to the centre so it flies into the middle of the lens
+      let target = lengthAtY(sy + vh * 0.72);
+      for (const fl of st.route.flashLens) {
+        const w = Math.exp(-(((target - fl) / 520) ** 2));
+        if (w > 0.001) target = target * (1 - w) + lengthAtY(sy + vh * 0.5) * w;
+      }
+      st.target = st.started ? Math.min(st.route.L, target) : 0;
       const d = st.target - st.cur;
       st.cur = Math.abs(d) < 0.4 ? st.target : st.cur + Math.sign(d) * Math.min(Math.abs(d) * 0.075, 95);
 
-      let now_station = -1;
       st.hits.forEach((h, i) => {
         if (st.cur >= h.len - 1) {
-          now_station = i;
           if (!st.done[i]) {
             st.done[i] = true;
             h.el.classList.add('beam-hit');
@@ -619,14 +642,41 @@ export default function Beam() {
           }
         }
       });
-      if (hud.current) {
-        hud.current.querySelector('b').textContent = `${String(Math.round((st.cur / st.route.L) * 100)).padStart(2, '0')}%`;
-        if (now_station !== station) {
-          station = now_station;
-          hud.current.querySelector('span').textContent = station < 0 ? 'Intro' : st.hits[station].name;
+      const out = world.frame({ t: now / 1000, dt, scrollY: sy, W: vw, H: vh, cur: st.cur });
+      if (out && flashEl.current) {
+        const f = out.flash < 0.01 ? 0 : out.flash;
+        flashEl.current.style.opacity = f.toFixed(3);
+        flashEl.current.style.setProperty('--fx', `${out.sx.toFixed(0)}px`);
+        flashEl.current.style.setProperty('--fy', `${out.sy.toFixed(0)}px`);
+        flashEl.current.style.setProperty('--fs', (0.4 + f * 1.6).toFixed(3));
+      }
+
+      // the beam is the only light in the room: a pool of red light travels
+      // with the head and the rest of the page sinks into the dark
+      if (out && lightEl.current && darkEl.current) {
+        const on = st.started && st.cur > 2;
+        const x = `${out.sx.toFixed(0)}px`;
+        const y = `${out.sy.toFixed(0)}px`;
+        for (const el of [lightEl.current, darkEl.current]) {
+          el.style.setProperty('--lx', x);
+          el.style.setProperty('--ly', y);
+        }
+        lightEl.current.classList.toggle('on', on);
+        darkEl.current.classList.toggle('on', on);
+
+        // and the portrait catches it: his rim light flares as the beam
+        // passes behind him
+        if (fig && sy < vh * 1.4) {
+          const r = fig.getBoundingClientRect();
+          const dx = (out.sx - (r.left + r.width / 2)) / (r.width * 0.75);
+          const dy = (out.sy - (r.top + r.height * 0.4)) / (r.height * 0.75);
+          const heat = on ? Math.max(0, 1 - Math.hypot(dx, dy)) : 0;
+          if (Math.abs(heat - lastHeat) > 0.01) {
+            lastHeat = heat;
+            fig.style.setProperty('--heat', heat.toFixed(3));
+          }
         }
       }
-      world.frame({ t: now / 1000, dt, scrollY: sy, W: vw, H: vh, cur: st.cur });
     };
     raf = requestAnimationFrame(loop);
 
@@ -645,6 +695,9 @@ export default function Beam() {
   return (
     <>
       <canvas className="beam-canvas" ref={canvas} aria-hidden="true" />
+      <div className="beam-dark" ref={darkEl} aria-hidden="true" />
+      <div className="beam-light" ref={lightEl} aria-hidden="true" />
+      <div className="beam-flash" ref={flashEl} aria-hidden="true" />
       <div className="beam-layer" ref={layer} style={{ height: geo?.docH || 0 }} aria-hidden="true">
         {geo?.labels &&
           geo.hits.map((h, i) =>
@@ -661,11 +714,6 @@ export default function Beam() {
               </span>
             ),
           )}
-      </div>
-      <div className="beam-hud" ref={hud} aria-hidden="true">
-        <i />
-        Signal <b>00%</b>
-        <span>Intro</span>
       </div>
     </>
   );

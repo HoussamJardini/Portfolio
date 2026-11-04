@@ -6,13 +6,11 @@ import Figure from './components/Figure';
 import Intro from './components/Intro';
 import Count from './components/Count';
 import { useActiveSection, useReveal, useSmoothScroll, scrollToId } from './hooks';
-import { person, hero, specimens, about, flagship, projects, path, toolkit } from './data/portfolioData';
+import { person, hero, about, flagship, projects, path, toolkit } from './data/portfolioData';
 import { coverFor } from './data/media';
-import portrait from './assets/portrait.webp';
 import cutout from './assets/hero-cutout.webp';
 
-const Specimen = lazy(() => import('./three/Specimen'));
-const Beam = lazy(() => import('./components/Beam'));
+const Swarm = lazy(() => import('./components/Swarm'));
 
 const SECTIONS = [
   ['top', 'Home'],
@@ -23,8 +21,6 @@ const SECTIONS = [
   ['contact', 'Contact'],
 ];
 const SECTION_IDS = SECTIONS.map(([id]) => id);
-const SPECIMEN_IDS = specimens.map((s) => s.id);
-const CYCLE_MS = 5200;
 const SELECTED = ['motionsync', 'rag-document-assistant', 'schemaforge'];
 
 // ---------------------------------------------------------------- icons
@@ -127,7 +123,7 @@ function Hero() {
 
   const [first, ...rest] = person.name.split(' ');
   return (
-    <section id="top" className="hero" ref={ref}>
+    <section id="top" className="hero" ref={ref} data-swarm="core" data-side="C">
       <p className="hero-word" aria-hidden="true">
         {'PORTFOLIO'.split('').map((ch, i) => (
           <span key={i} style={{ '--i': i }}>
@@ -202,47 +198,8 @@ function Hero() {
   );
 }
 
-// ---------------------------------------------------------------- selected projects
-function Selected({ onOpen }) {
-  const list = SELECTED.map((slug) => projects.find((p) => p.slug === slug)).filter(Boolean);
-  return (
-    <section className="selected wrap" aria-labelledby="selected-title">
-      <div className="bar-head" data-reveal>
-        <h2 id="selected-title">Selected projects</h2>
-        <span className="bar-rule" />
-        <Link to="work" className="bar-link">
-          View all projects <Icon name="arrow" size={18} />
-        </Link>
-      </div>
-      <div className="cards" data-beam="L" data-beam-name="Selected builds">
-        {list.map((p, i) => {
-          const cover = coverFor(p.slug);
-          return (
-            <button key={p.slug} className="card" onClick={() => onOpen(p.slug)} data-reveal style={{ '--rd': `${i * 90}ms` }}>
-              <span className="card-shot">
-                {cover ? <img src={cover} alt="" loading="lazy" /> : <Figure kind={p.figure} label="" />}
-              </span>
-              <span className="card-meta">
-                <span className="card-n">{String(i + 1).padStart(2, '0')}</span>
-                <span className="card-text">
-                  <b>{p.title}</b>
-                  <small>
-                    {p.field} · {p.metric}
-                  </small>
-                </span>
-                <Icon name="arrow" size={20} />
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-// ---------------------------------------------------------------- split words
-// Each word sits in its own mask and rises into place when the heading is
-// revealed.
+// ---------------------------------------------------------------- type
+// Each word sits in its own mask and rises into place when revealed.
 function Words({ text, from = 0 }) {
   const words = text.split(' ');
   return words.map((w, i) => (
@@ -255,186 +212,217 @@ function Words({ text, from = 0 }) {
   ));
 }
 
-// ---------------------------------------------------------------- section head
-function Head({ n, kicker, title, children }) {
+// A statement whose words light up one by one as it scrolls through.
+function ScrubText({ text, className }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const words = [...el.querySelectorAll('.sw')];
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      words.forEach((w) => {
+        w.style.opacity = '1';
+      });
+      return undefined;
+    }
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const r = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const p = Math.min(1, Math.max(0, (vh * 0.85 - r.top) / (r.height + vh * 0.35)));
+      const lit = p * words.length * 1.12;
+      words.forEach((w, i) => {
+        const o = Math.min(1, Math.max(0.13, lit - i)).toFixed(2);
+        if (w.style.opacity !== o) w.style.opacity = o;
+      });
+    };
+    const on = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener('scroll', on, { passive: true });
+    window.addEventListener('resize', on);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', on);
+      window.removeEventListener('resize', on);
+    };
+  }, []);
   return (
-    <header className="head" data-reveal>
-      <p className="head-n">
-        <span>{n}</span> {kicker}
-      </p>
-      <h2 className="head-title split">
-        <Words text={title} />
-      </h2>
-      {children && <p className="head-lede">{children}</p>}
-    </header>
+    <p ref={ref} className={className}>
+      {text.split(' ').map((w, i) => (
+        <Fragment key={i}>
+          <span className="sw">{w}</span>{' '}
+        </Fragment>
+      ))}
+    </p>
   );
 }
 
-// ---------------------------------------------------------------- lab
-function Lab({ onOpen }) {
+function Kicker({ n, children }) {
+  return (
+    <p className="kicker" data-reveal>
+      <span>{n}</span> {children}
+    </p>
+  );
+}
+
+// ---------------------------------------------------------------- chapters
+// Every chapter tells the swarm which shape to become and which side of the
+// screen to take (the text takes the other).
+function Statement() {
+  const line = hero.intro.split('. ').slice(1).join('. ');
+  return (
+    <section className="chapter" data-swarm="sphere" data-side="R" data-n="01" aria-label="What I do">
+      <div className="col">
+        <Kicker n="01">What I do</Kicker>
+        <ScrubText className="statement" text={line.charAt(0).toUpperCase() + line.slice(1)} />
+      </div>
+    </section>
+  );
+}
+
+function LabChapter({ onOpen }) {
   const { docstruct: d, tsr: t } = flagship;
   const maxP = Math.max(...t.compare.map((c) => c.params));
   return (
-    <section id="lab" className="lab">
-      <div className="wrap">
-        <Head n="01" kicker={`${flagship.org} · ${flagship.period}`} title={flagship.title}>
-          {flagship.lede}
-        </Head>
-
-        <div className="lab-grid" data-beam="R" data-beam-name="Flagship · document AI">
-          <article className="lab-card" data-reveal>
-            <p className="lab-tag">System</p>
-            <h3>{d.name}</h3>
-            <p className="lab-blurb">{d.blurb}</p>
-            <dl className="lab-stats">
-              {d.stats.map((s) => (
-                <div key={s.k}>
-                  <dt>
-                    <Count value={s.k} />
-                  </dt>
-                  <dd>{s.v}</dd>
-                </div>
-              ))}
-            </dl>
-            <button className="btn btn-line" onClick={() => onOpen('docstruct')}>
-              Read the case <Icon name="arrow" size={16} />
-            </button>
-          </article>
-
-          <article className="lab-card" data-reveal style={{ '--rd': '120ms' }}>
-            <p className="lab-tag">Model</p>
-            <h3>{t.name}</h3>
-            <p className="lab-blurb">{t.blurb}</p>
-            <OtslDecoder />
-            <div className="versus">
-              {t.compare.map((c, i) => (
-                <div key={c.name} className={`vs-row ${i === 0 ? 'mine' : ''}`}>
-                  <span className="vs-name">{c.name}</span>
-                  <span className="vs-bar">
-                    <i style={{ '--w': c.params / maxP }} />
-                  </span>
-                  <span className="vs-num">{c.params}M</span>
-                  <span className="vs-score">{c.steds.toFixed(3)}</span>
-                </div>
-              ))}
-              <p className="vs-legend">
-                <span>parameters</span>
-                <span>S-TEDS on real scanned tables</span>
-              </p>
-            </div>
-            <ul className="lab-notes">
-              {t.notes.map((n) => (
-                <li key={n}>{n}</li>
-              ))}
-            </ul>
-            <button className="btn btn-line" onClick={() => onOpen('table-structure-model')}>
-              Read the case <Icon name="arrow" size={16} />
-            </button>
-          </article>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ---------------------------------------------------------------- specimens
-function Specimens() {
-  const [shape, setShape] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const [ready, setReady] = useState(false);
-  const [coords, setCoords] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    if (!ready || paused || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
-    const id = setTimeout(() => setShape((s) => (s + 1) % specimens.length), CYCLE_MS);
-    return () => clearTimeout(id);
-  }, [shape, paused, ready]);
-
-  const onFrame = useCallback(({ x, y, inside }) => {
-    if (inside) setCoords({ x, y });
-  }, []);
-
-  const s = specimens[shape];
-  return (
-    <section className="specimens wrap" aria-label="Structures from my projects">
-      <div className="specimens-copy" data-reveal>
-        <p className="head-n">
-          <span>03</span> Specimens
-        </p>
-        <h2 className="head-title split">
-          <Words text="Real structures from" />{' '}
-          <em>
-            <Words text="real projects" from={3} />
-          </em>
+    <section id="lab" className="chapter" data-swarm="table" data-side="L" data-n="02">
+      <div className="col">
+        <Kicker n="02">
+          {flagship.org} · {flagship.period}
+        </Kicker>
+        <h2 className="ch-title split" data-reveal>
+          <Words text={flagship.title} />
         </h2>
-        <p className="head-lede">
-          Hand landmarks, table grids, body pose, pitch lines, a robot arm. Each shape is the kind of structure one of my models learned to read.
+        <p className="ch-lede" data-reveal>
+          {flagship.lede}
         </p>
+
+        <div className="ch-block" data-reveal>
+          <p className="lab-tag">System</p>
+          <h3 className="ch-h3">{d.name}</h3>
+          <p className="ch-text">{d.blurb}</p>
+          <dl className="lab-stats">
+            {d.stats.map((s) => (
+              <div key={s.k}>
+                <dt>
+                  <Count value={s.k} />
+                </dt>
+                <dd>{s.v}</dd>
+              </div>
+            ))}
+          </dl>
+          <button className="btn btn-line" onClick={() => onOpen('docstruct')}>
+            Read the case <Icon name="arrow" size={16} />
+          </button>
+        </div>
+
+        <div className="ch-block" data-reveal>
+          <p className="lab-tag">Model</p>
+          <h3 className="ch-h3">{t.name}</h3>
+          <p className="ch-text">{t.blurb}</p>
+          <OtslDecoder />
+          <div className="versus">
+            {t.compare.map((c, i) => (
+              <div key={c.name} className={`vs-row ${i === 0 ? 'mine' : ''}`}>
+                <span className="vs-name">{c.name}</span>
+                <span className="vs-bar">
+                  <i style={{ '--w': c.params / maxP }} />
+                </span>
+                <span className="vs-num">{c.params}M</span>
+                <span className="vs-score">{c.steds.toFixed(3)}</span>
+              </div>
+            ))}
+            <p className="vs-legend">
+              <span>parameters</span>
+              <span>S-TEDS on real scanned tables</span>
+            </p>
+          </div>
+          <ul className="lab-notes">
+            {t.notes.map((n) => (
+              <li key={n}>{n}</li>
+            ))}
+          </ul>
+          <button className="btn btn-line" onClick={() => onOpen('table-structure-model')}>
+            Read the case <Icon name="arrow" size={16} />
+          </button>
+        </div>
       </div>
-      <figure className="plate" data-beam="R" data-beam-name="Specimens" onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)}>
-        <Suspense fallback={null}>
-          <Specimen shapes={SPECIMEN_IDS} active={shape} onFrame={onFrame} onReady={() => setReady(true)} />
-        </Suspense>
-        <div className="plate-read" aria-hidden="true">
-          <span>x {coords.x.toFixed(3)}</span>
-          <span>y {coords.y.toFixed(3)}</span>
-        </div>
-        <figcaption className="plate-cap">
-          <span className="plate-fig">Fig. {String(shape + 1).padStart(2, '0')}</span>
-          <span className="plate-label" key={s.id}>
-            {s.label} <small>{s.source}</small>
-          </span>
-        </figcaption>
-        <div className="plate-tabs" role="tablist" aria-label="Specimens from my projects">
-          {specimens.map((sp, i) => (
-            <button
-              key={sp.id}
-              role="tab"
-              aria-selected={i === shape}
-              aria-label={`${sp.label}, ${sp.source}`}
-              className={i === shape ? 'on' : ''}
-              onClick={() => setShape(i)}
-            >
-              <span>{String(i + 1).padStart(2, '0')}</span>
-              <i style={{ animationDuration: `${CYCLE_MS}ms`, animationPlayState: paused || !ready ? 'paused' : 'running' }} />
-            </button>
-          ))}
-        </div>
-      </figure>
     </section>
   );
 }
 
-// ---------------------------------------------------------------- about
-function About() {
+function WorkChapter({ onOpen }) {
+  const list = SELECTED.map((slug) => projects.find((p) => p.slug === slug)).filter(Boolean);
   return (
-    <section id="about" className="about wrap">
-      <div className="about-grid">
-        <figure className="portrait" data-beam="L" data-beam-name="The engineer">
-          <img src={portrait} alt="Houssam Jardini" width="765" height="1024" loading="lazy" />
-        </figure>
-        <div className="about-text">
-          <Head n="04" kicker="About" title="Constraints are where it gets interesting." />
+    <section id="work" className="chapter full" data-swarm="field" data-side="C" data-dim="0.55">
+      <div className="wrap">
+        <Kicker n="03">Work</Kicker>
+        <h2 className="ch-title split" data-reveal>
+          <Words text={`${projects.length} projects, numbers included.`} />
+        </h2>
+        <p className="ch-lede narrow" data-reveal>
+          Each one with the number that told me it worked. Open any of them for the full story.
+        </p>
+        <div className="cards">
+          {list.map((p, i) => {
+            const cover = coverFor(p.slug);
+            return (
+              <button key={p.slug} className="card" onClick={() => onOpen(p.slug)} data-reveal style={{ '--rd': `${i * 90}ms` }}>
+                <span className="card-shot">
+                  {cover ? <img src={cover} alt="" loading="lazy" /> : <Figure kind={p.figure} label="" />}
+                </span>
+                <span className="card-meta">
+                  <span className="card-n">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="card-text">
+                    <b>{p.title}</b>
+                    <small>
+                      {p.field} · {p.metric}
+                    </small>
+                  </span>
+                  <Icon name="arrow" size={20} />
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="ch-index">
+          <WorkIndex projects={projects} onOpen={onOpen} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AboutChapter() {
+  return (
+    <section id="about" className="chapter" data-swarm="face" data-side="L" data-n="04">
+      <div className="col">
+        <Kicker n="04">About</Kicker>
+        <h2 className="ch-title split" data-reveal>
+          <Words text="Constraints are where it gets interesting." />
+        </h2>
+        <div className="ch-body">
           {about.paragraphs.map((p, i) => (
             <p key={i} data-reveal style={{ '--rd': `${i * 80}ms` }}>
               {p}
             </p>
           ))}
-          <dl className="facts" data-reveal>
-            {about.facts.map(([k, v]) => (
-              <div key={k}>
-                <dt>{k}</dt>
-                <dd>{v}</dd>
-              </div>
-            ))}
-          </dl>
         </div>
+        <dl className="facts" data-reveal>
+          {about.facts.map(([k, v]) => (
+            <div key={k}>
+              <dt>{k}</dt>
+              <dd>{v}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </section>
   );
 }
 
-// ---------------------------------------------------------------- path, method, skills
 const METHOD = [
   ['target', 'Frame', 'Pick the one number that says it works, and the benchmark it is measured on.'],
   ['layers', 'Data', 'Collect it, synthesise it when there is none, label only what must be labelled.'],
@@ -443,70 +431,77 @@ const METHOD = [
   ['send', 'Ship', 'Run it on the hardware the client actually has, offline if it has to be.'],
 ];
 
-function Path() {
-  const jobs = path.filter((p) => !p.edu);
-  const edu = path.filter((p) => p.edu);
+function Log({ rows }) {
   return (
-    <section id="path" className="path">
-      <div className="path-grid wrap">
-        <div className="path-col" data-reveal>
-          <h2 className="col-title">Experience</h2>
-          <ol className="log">
-            {jobs.map((p) => (
-              <li key={p.when + p.what}>
-                <div>
-                  <h3>{p.what}</h3>
-                  <p className="log-where">{p.where}</p>
-                </div>
-                <span className="log-when">{p.when}</span>
-              </li>
-            ))}
-          </ol>
-          <h2 className="col-title sub">Education</h2>
-          <ol className="log">
-            {edu.map((p) => (
-              <li key={p.when + p.what}>
-                <div>
-                  <h3>{p.what}</h3>
-                  <p className="log-where">{p.where}</p>
-                </div>
-                <span className="log-when">{p.when}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
+    <ol className="log">
+      {rows.map((p) => (
+        <li key={p.when + p.what}>
+          <div>
+            <h3>{p.what}</h3>
+            <p className="log-where">{p.where}</p>
+          </div>
+          <span className="log-when">{p.when}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
 
-        <div className="path-col" data-reveal style={{ '--rd': '90ms' }}>
-          <h2 className="col-title">How I work</h2>
-          <ol className="method">
-            {METHOD.map(([icon, name, text], i) => (
-              <li key={name}>
-                <span className="method-n">{String(i + 1).padStart(2, '0')}</span>
-                <span className="ring">
-                  <Icon name={icon} size={18} />
-                </span>
-                <div>
-                  <h3>{name}</h3>
-                  <p>{text}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
+function PathChapter() {
+  return (
+    <section id="path" className="chapter" data-swarm="pose" data-side="R" data-n="05">
+      <div className="col">
+        <Kicker n="05">Path</Kicker>
+        <h2 className="ch-title split" data-reveal>
+          <Words text="Where I have been, newest first." />
+        </h2>
+        <div className="ch-block" data-reveal>
+          <h3 className="col-title">Experience</h3>
+          <Log rows={path.filter((p) => !p.edu)} />
         </div>
-
-        <aside className="quote" data-beam="R" data-beam-name="Method">
-          <span className="quote-mark">“</span>
-          <p>A model is only as good as the number that proves it works.</p>
-          <span className="sign">Houssam</span>
-          <Link to="contact" className="quote-cta">
-            Let's build something that holds up <Icon name="arrow" size={16} />
-          </Link>
-        </aside>
+        <div className="ch-block" data-reveal>
+          <h3 className="col-title">Education</h3>
+          <Log rows={path.filter((p) => p.edu)} />
+        </div>
       </div>
+    </section>
+  );
+}
 
-      <div className="kit wrap" data-reveal>
-        <h2 className="col-title">Skills</h2>
-        <div className="kit-grid" data-beam="L" data-beam-name="Toolkit">
+function MethodChapter() {
+  return (
+    <section className="chapter" data-swarm="arm" data-side="L" data-n="06" aria-label="How I work">
+      <div className="col">
+        <Kicker n="06">Method</Kicker>
+        <ScrubText className="statement small" text="A model is only as good as the number that proves it works." />
+        <ol className="method" data-reveal>
+          {METHOD.map(([icon, name, text], i) => (
+            <li key={name}>
+              <span className="method-n">{String(i + 1).padStart(2, '0')}</span>
+              <span className="ring">
+                <Icon name={icon} size={18} />
+              </span>
+              <div>
+                <h3>{name}</h3>
+                <p>{text}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+function SkillsChapter() {
+  return (
+    <section className="chapter" data-swarm="pitch" data-side="R" data-n="07" aria-label="Toolkit">
+      <div className="col">
+        <Kicker n="07">Toolkit</Kicker>
+        <h2 className="ch-title split" data-reveal>
+          <Words text="What I build with." />
+        </h2>
+        <div className="kit-list" data-reveal>
           {toolkit.map((t) => (
             <div key={t.area}>
               <h3>{t.area}</h3>
@@ -545,14 +540,11 @@ function Contact() {
     ['pin', `${person.location} · ${person.availabilityWhere}`, null],
   ];
   return (
-    <section id="contact" className="contact">
+    <section id="contact" className="contact" data-swarm="core" data-side="C">
       <div className="contact-grid wrap">
         <div data-reveal>
           <h2 className="contact-title">
-            Let's work{' '}
-            <i className="star" data-beam="end" data-beam-name="Transmission end · say hi">
-              ✦
-            </i>
+            Let's work <i className="star">✦</i>
             <br />
             together
           </h2>
@@ -628,23 +620,19 @@ export default function App() {
       </a>
       <Intro />
       <Masthead active={active} />
-      <main>
+      <main className="story">
         <Hero />
-        <Selected onOpen={openCase} />
-        <Lab onOpen={openCase} />
-        <section id="work" className="work wrap">
-          <Head n="02" kicker="Work" title={`All ${projects.length} projects, numbers included.`}>
-            Each one with the number that told me it worked. Open any row for the full story.
-          </Head>
-          <WorkIndex projects={projects} onOpen={openCase} />
-        </section>
-        <Specimens />
-        <About />
-        <Path />
+        <Statement />
+        <LabChapter onOpen={openCase} />
+        <WorkChapter onOpen={openCase} />
+        <AboutChapter />
+        <PathChapter />
+        <MethodChapter />
+        <SkillsChapter />
         <Contact />
       </main>
       <Suspense fallback={null}>
-        <Beam />
+        <Swarm />
       </Suspense>
       <CaseDrawer projects={projects} slug={open} onChange={openCase} />
       <div className="grain" aria-hidden="true" />
