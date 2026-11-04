@@ -474,6 +474,8 @@ function createScene(canvas) {
     shared.uHead.value = cur / route.L;
 
     pointAt(cur, head.position);
+    // nothing to show until the beam has actually left its start point
+    head.visible = cur > 2;
     const pulseT = (t * 0.7) % 1;
     pulse.scale.setScalar(8 + pulseT * 22);
     pulseMat.opacity = (1 - pulseT) * 0.8;
@@ -483,7 +485,7 @@ function createScene(canvas) {
     const moved = lastHead ? head.position.distanceTo(lastHead) : 0;
     lastHead = (lastHead || new THREE.Vector3()).copy(head.position);
     const n = Math.min(6, 1 + Math.floor(moved / 6));
-    for (let k = 0; k < n; k++) if (Math.random() < 0.7) emit(head.position.x, head.position.y, head.position.z, 20 + Math.random() * 70);
+    if (head.visible) for (let k = 0; k < n; k++) if (Math.random() < 0.7) emit(head.position.x, head.position.y, head.position.z, 20 + Math.random() * 70);
     for (let i = 0; i < SPARKS; i++) {
       if (sLife[i] <= 0) continue;
       sLife[i] -= dt / sMax[i];
@@ -548,6 +550,10 @@ export default function Beam() {
     const relayout = () => {
       clearTimeout(t0);
       t0 = setTimeout(() => {
+        // the scrollbar comes and goes (intro lock), so size from scratch
+        vw = document.documentElement.clientWidth;
+        vh = window.innerHeight;
+        world.size(vw, vh);
         const g = measure();
         if (!g) return;
         st.route = world.setRoute(g);
@@ -556,22 +562,24 @@ export default function Beam() {
         setGeo(g);
       }, 120);
     };
-    const onResize = () => {
-      vw = document.documentElement.clientWidth;
-      vh = window.innerHeight;
-      world.size(vw, vh);
-      relayout();
-    };
+    const onResize = relayout;
     relayout();
     const ro = new ResizeObserver(relayout);
     const main = document.querySelector('main');
     if (main) ro.observe(main);
     window.addEventListener('resize', onResize);
     document.fonts?.ready.then(relayout);
-    // let the hero settle before the beam comes out from behind him
-    const intro = setTimeout(() => {
-      st.started = true;
-    }, 900);
+    // wait for the intro to open, then let the hero settle before the beam
+    // comes out from behind him
+    let intro = 0;
+    const begin = () => {
+      relayout();
+      intro = setTimeout(() => {
+        st.started = true;
+      }, 1100);
+    };
+    if (document.documentElement.classList.contains('intro-done')) begin();
+    else window.addEventListener('intro:done', begin, { once: true });
 
     const lengthAtY = (y) => {
       const { ym, N, L } = st.route;
@@ -626,6 +634,7 @@ export default function Beam() {
       cancelAnimationFrame(raf);
       clearTimeout(t0);
       clearTimeout(intro);
+      window.removeEventListener('intro:done', begin);
       ro.disconnect();
       window.removeEventListener('resize', onResize);
       document.documentElement.classList.remove('beam-on');

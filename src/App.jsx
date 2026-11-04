@@ -1,8 +1,10 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import OtslDecoder from './components/OtslDecoder';
 import WorkIndex from './components/WorkIndex';
 import CaseDrawer from './components/CaseDrawer';
 import Figure from './components/Figure';
+import Intro from './components/Intro';
+import Count from './components/Count';
 import { useActiveSection, useReveal, useSmoothScroll, scrollToId } from './hooks';
 import { person, hero, specimens, about, flagship, projects, path, toolkit } from './data/portfolioData';
 import { coverFor } from './data/media';
@@ -185,7 +187,9 @@ function Hero() {
         <dl className="hero-stats">
           {hero.proof.map((p, i) => (
             <div key={p.value} className="load" style={{ '--d': 7 + i * 0.5 }}>
-              <dt>{p.value}</dt>
+              <dt>
+                <Count value={p.value} />
+              </dt>
               <dd>
                 <b>{p.unit}</b>
                 {p.note}
@@ -236,6 +240,21 @@ function Selected({ onOpen }) {
   );
 }
 
+// ---------------------------------------------------------------- split words
+// Each word sits in its own mask and rises into place when the heading is
+// revealed.
+function Words({ text, from = 0 }) {
+  const words = text.split(' ');
+  return words.map((w, i) => (
+    <Fragment key={i}>
+      <span className="w">
+        <span style={{ '--i': i + from }}>{w}</span>
+      </span>
+      {i < words.length - 1 ? ' ' : null}
+    </Fragment>
+  ));
+}
+
 // ---------------------------------------------------------------- section head
 function Head({ n, kicker, title, children }) {
   return (
@@ -243,7 +262,9 @@ function Head({ n, kicker, title, children }) {
       <p className="head-n">
         <span>{n}</span> {kicker}
       </p>
-      <h2 className="head-title">{title}</h2>
+      <h2 className="head-title split">
+        <Words text={title} />
+      </h2>
       {children && <p className="head-lede">{children}</p>}
     </header>
   );
@@ -268,7 +289,9 @@ function Lab({ onOpen }) {
             <dl className="lab-stats">
               {d.stats.map((s) => (
                 <div key={s.k}>
-                  <dt>{s.k}</dt>
+                  <dt>
+                    <Count value={s.k} />
+                  </dt>
                   <dd>{s.v}</dd>
                 </div>
               ))}
@@ -338,8 +361,11 @@ function Specimens() {
         <p className="head-n">
           <span>03</span> Specimens
         </p>
-        <h2 className="head-title">
-          Real structures from <em>real projects</em>
+        <h2 className="head-title split">
+          <Words text="Real structures from" />{' '}
+          <em>
+            <Words text="real projects" from={3} />
+          </em>
         </h2>
         <p className="head-lede">
           Hand landmarks, table grids, body pose, pitch lines, a robot arm. Each shape is the kind of structure one of my models learned to read.
@@ -485,8 +511,10 @@ function Path() {
             <div key={t.area}>
               <h3>{t.area}</h3>
               <ul className="chips">
-                {t.items.map((x) => (
-                  <li key={x}>{x}</li>
+                {t.items.map((x, ci) => (
+                  <li key={x} style={{ '--ci': ci }}>
+                    {x}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -598,6 +626,7 @@ export default function App() {
       <a className="skip" href="#work">
         Skip to projects
       </a>
+      <Intro />
       <Masthead active={active} />
       <main>
         <Hero />
