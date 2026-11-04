@@ -66,7 +66,6 @@ export default function Intro() {
     const start = performance.now();
     let shown = 0;
     let raf = 0;
-    let out = 0;
     const tick = (now) => {
       const t = Math.max(0, now - start);
       const cap = ready ? 100 : 92;
@@ -92,10 +91,6 @@ export default function Intro() {
 
       if (shown >= 100) {
         setPhase('out');
-        out = setTimeout(() => {
-          lockScroll(false);
-          finishIntro();
-        }, 520);
         return;
       }
       raf = requestAnimationFrame(tick);
@@ -104,14 +99,28 @@ export default function Intro() {
     return () => {
       cancelAnimationFrame(raf);
       clearTimeout(bail);
-      clearTimeout(out);
     };
   }, [phase]);
 
+  // the release lives in its own effect: a timer started in the load effect
+  // would be cleared by that effect's own cleanup the moment the phase changes,
+  // which left the page locked (overflow: hidden) — fatal for touch scrolling
   useEffect(() => {
     if (phase !== 'out') return undefined;
+    const release = setTimeout(() => {
+      lockScroll(false);
+      finishIntro();
+    }, 520);
     const id = setTimeout(() => setPhase('gone'), 1700);
-    return () => clearTimeout(id);
+    return () => {
+      clearTimeout(release);
+      clearTimeout(id);
+    };
+  }, [phase]);
+
+  // whatever happens above, once the intro is gone the page must scroll
+  useEffect(() => {
+    if (phase === 'gone') lockScroll(false);
   }, [phase]);
 
   if (phase === 'gone') return null;
