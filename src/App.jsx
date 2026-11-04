@@ -22,7 +22,7 @@ const SECTIONS = [
   ['contact', 'Contact'],
 ];
 const SECTION_IDS = SECTIONS.map(([id]) => id);
-const SELECTED = ['ajustocv', 'rag-document-assistant', 'schemaforge'];
+const SELECTED = ['motionsync', 'rag-document-assistant', 'schemaforge'];
 
 // ---------------------------------------------------------------- icons
 const I = {
