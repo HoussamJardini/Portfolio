@@ -96,9 +96,13 @@ export default function Intro() {
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
+    // animation frames can be throttled or paused (battery saver, low-power
+    // mode, a tab opened in the background): a plain timer opens the page anyway
+    const failsafe = setTimeout(() => setPhase('out'), MIN + 4500);
     return () => {
       cancelAnimationFrame(raf);
       clearTimeout(bail);
+      clearTimeout(failsafe);
     };
   }, [phase]);
 
