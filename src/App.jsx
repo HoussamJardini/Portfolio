@@ -546,7 +546,7 @@ function Contact() {
   };
   const rows = [
     ['mail', person.email, `mailto:${person.email}`],
-    ['globe', 'linkedin.com/in/jardini-houssam', person.linkedin],
+    ['globe', 'linkedin.com/in/houssam-jardini', person.linkedin],
     ['code', 'github.com/HoussamJardini', person.github],
     ['phone', person.phone, `tel:${person.phone.replace(/\s/g, '')}`],
     ['pin', `${person.location} · ${person.availabilityWhere}`, null],
