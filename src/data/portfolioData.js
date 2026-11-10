@@ -16,7 +16,7 @@ export const person = {
   email: "jardini.houssam@uit.ac.ma",
   phone: "+212 689 631 536",
   github: "https://github.com/HoussamJardini",
-  linkedin: "https://www.linkedin.com/in/jardini-houssam-116b762a7",
+  linkedin: "https://www.linkedin.com/in/houssam-jardini-116b762a7",
   cv: { en: "Houssam_Jardini_CV.pdf", fr: "Houssam_Jardini_CV_FR.pdf" },
 };
 
